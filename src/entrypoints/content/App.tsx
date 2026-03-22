@@ -1,3 +1,5 @@
+import {Logo} from "@/components/icons/index.ts";
+
 const App = () => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -17,12 +19,20 @@ const App = () => {
     <div
       className={
         `${isOpen ? "flex" : "hidden"} 
-        w-90 p-2 fixed z-10000 top-6 right-16 
-        rounded-3xl flex-col gap-4 bg-pink-300`
+        w-90 h-auto p-2 rounded-sm 
+        fixed z-10000 top-6 right-16 
+        flex-col gap-0 
+        container-shadow container-backdrop 
+        bg-obsidian-400 text-ash-100`
       }
     >
+      {/* header */}
+      <div className="flex justify-start items-center gap-2 ">
+        <Logo className="size-4"/>
+        <span className="text-sm">Fastimba</span>
+      </div>
       <h2 className="text-3xl">Hello World</h2>
     </div>
   )
 }
-export default App
+export default App;

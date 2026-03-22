@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+@theme{
+  /* custom color */
+  --color-obsidian-400: lch(9.2 3.1 267.3 / 80%);
+  --color-ash-100: lch(86.7 0 0 / 1);
+  --color-iris-400: lch(47.87 5.19 285.84);
+  --color-emerald-400: lch(66.69 53.46 161.39);
+  --color-mist-50: lch(96.32 2.56 250.94 / 20%);
+  
+  /* custom font */
+  --font-monosans: "Helvetica Neue", Verdana, sans-serif;
+}
+
+/* set default font */
+@layer base {
+  body{
+    @apply font-monosans;
+  }
+}
+
+/* container box-shadow */
+@utility container-shadow{
+  box-shadow: rgba(255, 255, 255, 0.1) 0 0 0 0.5px inset;
+}
+
+@utility container-backdrop{
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
