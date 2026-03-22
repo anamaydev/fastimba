@@ -1,34 +1,28 @@
-import { useState } from 'react';
-import reactLogo from '@/assets/react.svg';
-import wxtLogo from '/wxt.svg';
+const App = () => {
+  const [isOpen, setIsOpen] = useState(false);
 
-function App() {
-  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const handleMessage = (message: {type: string}) => {
+      if(message.type === "TOGGLE_OVERLAY") {
+        console.log("message received: ", message);
+        setIsOpen(prevIsOpen => !prevIsOpen);
+      }
+    }
+
+    browser.runtime.onMessage.addListener(handleMessage);
+    return () => browser.runtime.onMessage.removeListener(handleMessage);
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://wxt.dev" target="_blank">
-          <img src={wxtLogo} className="logo" alt="WXT logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>WXT + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the WXT and React logos to learn more
-      </p>
-    </>
-  );
+    <div
+      className={
+        `${isOpen ? "flex" : "hidden"} 
+        w-90 p-2 fixed z-10000 top-6 right-16 
+        rounded-3xl flex-col gap-4 bg-pink-300`
+      }
+    >
+      <h2 className="text-3xl">Hello World</h2>
+    </div>
+  )
 }
-
-export default App;
+export default App

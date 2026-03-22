@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   srcDir: 'src',
+  manifest: {
+    action: {},
+  },
   vite: () => ({
     plugins: [tailwindcss()],
   }),

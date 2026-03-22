@@ -10,7 +10,7 @@ export default defineContentScript({
   async main(ctx) {
     /* create a shadow-root-based UI container managed by WXT */
     const ui = await createShadowRootUi(ctx, {
-      name: "fastimba-root",
+      name: "fastimba-app",
       position: "inline",
       anchor: "body",
       append: "last",
