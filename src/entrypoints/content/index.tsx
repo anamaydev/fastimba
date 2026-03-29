@@ -3,7 +3,7 @@ import App from "./App.tsx";
 import '@/assets/index.css';
 
 export default defineContentScript({
-  matches: ['<all_urls>'],
+  matches: ['*://scrimba.com/*'],
   /* inject CSS in "ui" mode: styling applies only to extension UI and not to page's own styles */
   cssInjectionMode: 'ui',
 

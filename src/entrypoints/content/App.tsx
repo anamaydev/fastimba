@@ -49,6 +49,63 @@ const App = () => {
     if(ogImage) setScrimbaThumbnail(ogImage.content);
   }, []);
 
+  useEffect(() => {
+    /* observe scrim-view element for changes in class */
+    const modeEditObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        /* ignore non class attribute mutations */
+        if(mutation.attributeName !== "class") return;
+
+        /* parse previous and current class lists into sets */
+        const oldClassNames = new Set(mutation.oldValue?.split(" ") || []);
+        const newClassNames = new Set((mutation.target as Element).className.split(" "));
+
+        /* determine which classes were added */
+        const addedClassNames = [...newClassNames].filter((className) => !oldClassNames.has(className));
+
+        /* look for only mode-edit and mode-view classes */
+        const editorMode = addedClassNames.filter((className) => className === "mode-edit" || className === "mode-view")[0];
+
+        if (editorMode === "mode-edit")
+          console.log("edit mode activated.");
+        else if(editorMode === "mode-view")
+          console.log("view mode activated.");
+        else
+          console.log("irrelevant class detected.");
+      })
+    })
+
+    /* wait until scrim-view element mounts, then disconnect */
+    const scrimViewMountObserver = new MutationObserver(() => {
+      const scrimViewEl = document.querySelector("scrim-view");
+
+      if(!scrimViewEl) return;
+      /* disconnect scrimViewMountObserver and start observing class changes in scrim-view element */
+      scrimViewMountObserver.disconnect();
+      modeEditObserver.observe(scrimViewEl, {attributes: true, attributeFilter: ["class"], attributeOldValue: true});
+    });
+
+    /* wait until op-layers element mounts, then disconnect */
+    const opLayersMountObserver = new MutationObserver(() => {
+      const opLayersEl = document.querySelector("op-layers");
+
+      if(!opLayersEl) return;
+      /* disconnect opLayerMountObserver and start observing for scrim-view element */
+      opLayersMountObserver.disconnect();
+      scrimViewMountObserver.observe(document.body, {childList: true, subtree: true});
+    });
+
+    /* start observing DOM for op-layers element */
+    opLayersMountObserver.observe(document.body, {childList: true, subtree: true});
+
+    /* clean-up all the mutation observers */
+    return () => {
+      opLayersMountObserver.disconnect();
+      scrimViewMountObserver.disconnect();
+      modeEditObserver.disconnect();
+    };
+  }, []);
+
   return (
     <div
       className={
