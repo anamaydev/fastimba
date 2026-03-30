@@ -8,6 +8,10 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
 
   async main(ctx) {
+    await injectScript("/monaco-bridge.js", {
+      keepInDom: true,
+    })
+
     /* create a shadow-root-based UI container managed by WXT */
     const ui = await createShadowRootUi(ctx, {
       name: "fastimba-app",

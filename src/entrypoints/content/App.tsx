@@ -1,43 +1,80 @@
+import type {ChangeEvent} from "react";
 import {Logo} from "@/components/icons/index";
 import Toggle from "@/components/Toggle";
-import type {ChangeEvent} from "react";
 
-interface ToggleSettingsDataType {
+interface UserPreferenceType {
   vim: boolean;
   relativeLineNumbers: boolean;
   emmet: boolean;
+}
+
+interface PostToMonacoBridge {
+  type: "FEATURE_SETTINGS_UPDATE",
+  payload: UserPreferenceType
 }
 
 const App = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrimbaTitle, setScrimbaTitle] = useState<string | null>(null)
   const [scrimbaThumbnail, setScrimbaThumbnail] = useState<string | null>(null)
-  const [toggleSettingsData, setToggleSettingsData] = useState<ToggleSettingsDataType>({
-    vim: false,
-    relativeLineNumbers: false,
-    emmet: false,
+  const [_editorMode, setEditorMode] = useState<"edit" | "view">("view");
+  const [userPreference, setUserPreference] = useState<UserPreferenceType>(() => {
+    const savedUserPreference = localStorage.getItem("userPreference");
+    return savedUserPreference ?
+      JSON.parse(savedUserPreference) :
+      {
+        vim: false,
+        relativeLineNumbers: false,
+        emmet: false,
+      };
   })
 
   /* handle settings change */
   const handleToggleSettingsData = (event: ChangeEvent<HTMLInputElement>) => {
     const {name, checked} = event.target
-    setToggleSettingsData(prevToggleSettingsData => ({
+    setUserPreference(prevToggleSettingsData => ({
       ...prevToggleSettingsData,
       [name]: checked,
     }))
   }
 
-  /* receive message from a service worker */
+  /* handle posting message to monaco bridge script */
+  const postToMonacoBridge = (message: PostToMonacoBridge) => {
+    window.postMessage({
+      source: "fastimba",
+      ...message
+    }, "*");
+  };
+
+  /* sync feature settings data changes to localStorage and post message to monaco bridge */
+  useEffect(() => {
+    localStorage.setItem("userPreference", JSON.stringify(userPreference));
+    postToMonacoBridge({type: "FEATURE_SETTINGS_UPDATE", payload: userPreference});
+  }, [userPreference]);
+
+  /* --- handle received message from a service worker --- */
   useEffect(() => {
     const handleMessage = (message: {type: string}) => {
-      if(message.type === "TOGGLE_OVERLAY") {
-        console.log("message received: ", message);
+      if(message.type === "TOGGLE_OVERLAY")
         setIsOpen(prevIsOpen => !prevIsOpen);
-      }
-    }
+    };
 
     browser.runtime.onMessage.addListener(handleMessage);
     return () => browser.runtime.onMessage.removeListener(handleMessage);
+  }, []);
+
+  /* --- handle received message from the bridge script --- */
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if(event.source !== window) return;             /* exit if the message is not from the same window */
+      if (event.data.source !== "fastimba") return;   /* exit if the messages is not from fastimba extension */
+
+      /* handle editor mode updates */
+      if (event.data.type === "EDITOR_ACTIVE_MODE_UPDATE") setEditorMode(event.data.payload);
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   /* get and assign Scrimba title and thumbnail */
@@ -47,63 +84,6 @@ const App = () => {
 
     if(ogTitle) setScrimbaTitle(ogTitle.content);
     if(ogImage) setScrimbaThumbnail(ogImage.content);
-  }, []);
-
-  useEffect(() => {
-    /* observe scrim-view element for changes in class */
-    const modeEditObserver = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        /* ignore non class attribute mutations */
-        if(mutation.attributeName !== "class") return;
-
-        /* parse previous and current class lists into sets */
-        const oldClassNames = new Set(mutation.oldValue?.split(" ") || []);
-        const newClassNames = new Set((mutation.target as Element).className.split(" "));
-
-        /* determine which classes were added */
-        const addedClassNames = [...newClassNames].filter((className) => !oldClassNames.has(className));
-
-        /* look for only mode-edit and mode-view classes */
-        const editorMode = addedClassNames.filter((className) => className === "mode-edit" || className === "mode-view")[0];
-
-        if (editorMode === "mode-edit")
-          console.log("edit mode activated.");
-        else if(editorMode === "mode-view")
-          console.log("view mode activated.");
-        else
-          console.log("irrelevant class detected.");
-      })
-    })
-
-    /* wait until scrim-view element mounts, then disconnect */
-    const scrimViewMountObserver = new MutationObserver(() => {
-      const scrimViewEl = document.querySelector("scrim-view");
-
-      if(!scrimViewEl) return;
-      /* disconnect scrimViewMountObserver and start observing class changes in scrim-view element */
-      scrimViewMountObserver.disconnect();
-      modeEditObserver.observe(scrimViewEl, {attributes: true, attributeFilter: ["class"], attributeOldValue: true});
-    });
-
-    /* wait until op-layers element mounts, then disconnect */
-    const opLayersMountObserver = new MutationObserver(() => {
-      const opLayersEl = document.querySelector("op-layers");
-
-      if(!opLayersEl) return;
-      /* disconnect opLayerMountObserver and start observing for scrim-view element */
-      opLayersMountObserver.disconnect();
-      scrimViewMountObserver.observe(document.body, {childList: true, subtree: true});
-    });
-
-    /* start observing DOM for op-layers element */
-    opLayersMountObserver.observe(document.body, {childList: true, subtree: true});
-
-    /* clean-up all the mutation observers */
-    return () => {
-      opLayersMountObserver.disconnect();
-      scrimViewMountObserver.disconnect();
-      modeEditObserver.disconnect();
-    };
   }, []);
 
   return (
@@ -134,19 +114,19 @@ const App = () => {
         <Toggle
           label="Vim"
           name="vim"
-          toggleState={toggleSettingsData.vim}
+          toggleState={userPreference.vim}
           onChange={handleToggleSettingsData}
         />
         <Toggle
           label="Relative Line Numbers"
           name="relativeLineNumbers"
-          toggleState={toggleSettingsData.relativeLineNumbers}
+          toggleState={userPreference.relativeLineNumbers}
           onChange={handleToggleSettingsData}
         />
         <Toggle
           label="Emmet"
           name="emmet"
-          toggleState={toggleSettingsData.emmet}
+          toggleState={userPreference.emmet}
           onChange={handleToggleSettingsData}
         />
       </div>

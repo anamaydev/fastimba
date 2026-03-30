@@ -7,6 +7,12 @@ export default defineConfig({
   srcDir: 'src',
   manifest: {
     action: {},
+    web_accessible_resources: [
+      {
+        resources: ['monaco-bridge.js'],
+        matches: ['*://scrimba.com/*']
+      }
+    ]
   },
   vite: () => ({
     plugins: [tailwindcss()],
