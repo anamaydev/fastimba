@@ -1,4 +1,6 @@
 import type * as Monaco from 'monaco-editor';
+import { initVimMode, VimMode, VimAdapterInstance } from 'monaco-vim';
+import templates from "./templates.ts";
 
 interface UserPreferenceType {
   vim: boolean;
@@ -17,6 +19,9 @@ export default defineUnlistedScript(() => {
   let editorInstance:  Monaco.editor.ICodeEditor | null = null;
   let isScrimViewMounted = false;
   let waitForEditor: NodeJS.Timeout | null = null;
+  let statusBarParentEl: HTMLElement | null = null;
+  let vimMode: VimAdapterInstance | null = null;
+  const {styles} = templates;
 
   /* handle posting message to content script */
   const postToContent = (message: PostToContent): void => {
@@ -34,7 +39,7 @@ export default defineUnlistedScript(() => {
   const addEditorFeatures = () => {
     if(!userPreference) return;
     if(!editorInstance) return;
-    const {relativeLineNumbers} = userPreference;
+    const {relativeLineNumbers, vim} = userPreference;
     const editor = editorInstance;
 
     if(relativeLineNumbers) {
@@ -42,7 +47,7 @@ export default defineUnlistedScript(() => {
       const style = document.createElement('style');
       style.id = 'fastimba-styles';
       /* highlight active line number */
-      style.textContent = `.active-line-number {color: #d4d4d899 !important;}`;
+      style.textContent = styles;
       document.head.appendChild(style);
 
       /* configure monaco editor for requested options */
@@ -56,15 +61,20 @@ export default defineUnlistedScript(() => {
       });
     }
 
-    console.log("options: ", editor.getOptions());
-    console.log("raw options", editor.getRawOptions());
+    if(vim) {
+      const statusBarEl = document.createElement('div');
+      statusBarEl.id = 'fastimba-status-bar';
+      statusBarParentEl?.appendChild(statusBarEl);
+      console.log('initVimMode called', new Date().toISOString());
+      vimMode = initVimMode(editor as Monaco.editor.IStandaloneCodeEditor, statusBarEl);
+    }
   }
 
   /* reset editor to default state after exiting edit mode */
   const removeEditorFeatures = () => {
     if(!userPreference) return;
     if(!editorInstance) return;
-    const {relativeLineNumbers} = userPreference;
+    const {relativeLineNumbers, vim} = userPreference;
 
     if(relativeLineNumbers) {
       /* clean up injected custom styles */
@@ -74,6 +84,12 @@ export default defineUnlistedScript(() => {
       editorInstance.updateOptions({
         lineNumbers: "on",
       })
+    }
+
+    /* clean up monaco vim */
+    if(vim && vimMode) {
+      vimMode.dispose();
+      vimMode = null;
     }
   };
 
@@ -103,6 +119,17 @@ export default defineUnlistedScript(() => {
     });
   });
 
+  /* wait till ide-console-panel mounts and disconnect */
+  const ideConsolePanelMountObserver = new MutationObserver(() => {
+    const ideConsolePanelEl = document.querySelector("ide-console-panel");
+    if (!ideConsolePanelEl) return;
+
+    statusBarParentEl = ideConsolePanelEl.parentElement;
+    ideConsolePanelMountObserver.disconnect();
+    console.log("found ide-console-panel", ideConsolePanelEl);
+    console.log("ideConsolePanelMountObserver disconnected");
+  })
+
   /* wait until scrim-view element mounts, then disconnect */
   const scrimViewMountObserver = new MutationObserver(() => {
     const scrimViewEl = document.querySelector('scrim-view');
@@ -111,6 +138,7 @@ export default defineUnlistedScript(() => {
       /* scrim-view mounted, start watching for mode-edit */
       isScrimViewMounted = true;
       modeEditObserver.observe(scrimViewEl, {attributes: true, attributeFilter: ["class"], attributeOldValue: true});
+      ideConsolePanelMountObserver.observe(scrimViewEl, {childList: true, subtree: true});
 
       /* poll until editor instance is ready */
       waitForEditor = setInterval(() => {
@@ -150,6 +178,7 @@ export default defineUnlistedScript(() => {
     opLayersMountObserver.disconnect();
     scrimViewMountObserver.disconnect();
     modeEditObserver.disconnect();
+    ideConsolePanelMountObserver.disconnect();
     if(waitForEditor) clearInterval(waitForEditor);
   })
 });
