@@ -11,6 +11,7 @@ interface PostToContent {
   payload: "view" | "edit"
 }
 
+// noinspection JSUnusedGlobalSymbols
 export default defineUnlistedScript(() => {
   let userPreference: UserPreferenceType | null = null;
   let editorInstance:  Monaco.editor.ICodeEditor | null = null;
@@ -29,6 +30,53 @@ export default defineUnlistedScript(() => {
     if(event.data.type === "FEATURE_SETTINGS_UPDATE") userPreference = event.data.payload;
   }
 
+  /* apply user preference settings to the editor */
+  const addEditorFeatures = () => {
+    if(!userPreference) return;
+    if(!editorInstance) return;
+    const {relativeLineNumbers} = userPreference;
+    const editor = editorInstance;
+
+    if(relativeLineNumbers) {
+      /* inject custom styles */
+      const style = document.createElement('style');
+      style.id = 'fastimba-styles';
+      /* highlight active line number */
+      style.textContent = `.active-line-number {color: #d4d4d899 !important;}`;
+      document.head.appendChild(style);
+
+      /* configure monaco editor for requested options */
+      editor.updateOptions({
+        lineNumbers: (lineNumber => {
+          const activeLineNumber = editor.getPosition()?.lineNumber ?? lineNumber;
+          if(lineNumber === activeLineNumber) return `${activeLineNumber}`;
+          else if (lineNumber < activeLineNumber) return `${activeLineNumber - lineNumber}`;
+          else return `${lineNumber - activeLineNumber}`;
+        }),
+      });
+    }
+
+    console.log("options: ", editor.getOptions());
+    console.log("raw options", editor.getRawOptions());
+  }
+
+  /* reset editor to default state after exiting edit mode */
+  const removeEditorFeatures = () => {
+    if(!userPreference) return;
+    if(!editorInstance) return;
+    const {relativeLineNumbers} = userPreference;
+
+    if(relativeLineNumbers) {
+      /* clean up injected custom styles */
+      document.getElementById('fastimba-styles')?.remove();
+
+      /* reset the editor to default options */
+      editorInstance.updateOptions({
+        lineNumbers: "on",
+      })
+    }
+  };
+
   const modeEditObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       /* ignore non class attribute mutations */
@@ -44,10 +92,14 @@ export default defineUnlistedScript(() => {
       /* look for only mode-edit and mode-view classes */
       const editorMode = addedClassNames.filter((className) => className === "mode-edit" || className === "mode-view")[0];
 
-      if (editorMode === "mode-edit")
+      if (editorMode === "mode-edit"){
         postToContent({type: "EDITOR_ACTIVE_MODE_UPDATE", payload: "edit"});
-      else if(editorMode === "mode-view")
+        addEditorFeatures();
+      }
+      else if(editorMode === "mode-view"){
         postToContent({type: "EDITOR_ACTIVE_MODE_UPDATE", payload: "view"});
+        removeEditorFeatures();
+      }
     });
   });
 
