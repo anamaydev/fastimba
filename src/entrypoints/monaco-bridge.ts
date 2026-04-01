@@ -1,5 +1,6 @@
 import type * as Monaco from 'monaco-editor';
-import { initVimMode, VimMode, VimAdapterInstance } from 'monaco-vim';
+// @ts-ignore
+import {initVimMode, VimAdapterInstance} from 'monaco-vim';
 import templates from "./templates.ts";
 
 interface UserPreferenceType {
@@ -42,6 +43,7 @@ export default defineUnlistedScript(() => {
     const {relativeLineNumbers, vim} = userPreference;
     const editor = editorInstance;
 
+    /* configure relative line numbers feature */
     if(relativeLineNumbers) {
       /* inject custom styles */
       const style = document.createElement('style');
@@ -61,14 +63,49 @@ export default defineUnlistedScript(() => {
       });
     }
 
+    /* configure vim feature */
     if(vim) {
       const statusBarEl = document.createElement('div');
       statusBarEl.id = 'fastimba-status-bar';
       statusBarParentEl?.appendChild(statusBarEl);
-      console.log('initVimMode called', new Date().toISOString());
+
+      /*
+      * scrimba runs monaco 0.34.1 which doesn't expose getConfiguration().
+      * monaco-vim calls it to check readOnly before entering insert mode.
+      * without this polyfill, insert mode is permanently blocked.
+      * */
+      const editorAny = editor as any;
+      if (typeof editorAny.getConfiguration !== 'function') {
+        editorAny.getConfiguration = () => ({
+          readOnly: editor.getOption(window.monaco.editor.EditorOption.readOnly),
+          viewInfo: { cursorWidth: editor.getOption(window.monaco.editor.EditorOption.cursorWidth) },
+          fontInfo: editor.getOption(window.monaco.editor.EditorOption.fontInfo)
+        });
+      }
+
+      /* initiate vim mode */
       vimMode = initVimMode(editor as Monaco.editor.IStandaloneCodeEditor, statusBarEl);
+
+      /* handle focus shifting to tabs and bring back to editor */
+      editor.onKeyDown((e) => {
+        if (e.keyCode === window.monaco.KeyCode.Escape) {
+          /* scrimba listens to Monaco's internal keydown and calls tab.focus() on esc */
+          const tab = document.querySelector('ide-editor-tab.checked') as HTMLElement;
+          if (!tab) return;
+
+          /* temporarily make tab.focus() a no-op so scrimba's releaseFocusFromWidget() does nothing */
+          const originalFocus = tab.focus.bind(tab);
+          tab.focus = () => {};
+
+          /* microtask runs before browser paints, avoiding the focus animation flicker */
+          queueMicrotask(() => {
+            tab.focus = originalFocus; /* restore original focus */
+            editor.focus(); /* bring focus back to editor */
+          });
+        }
+      });
     }
-  }
+  };
 
   /* reset editor to default state after exiting edit mode */
   const removeEditorFeatures = () => {
