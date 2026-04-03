@@ -1,7 +1,6 @@
 export default defineBackground(() => {
   browser.action.onClicked.addListener(async (tab) => {
     if(tab.id) {
-      console.log(`icon was clicked on Tab ${tab.id}`);
       try {
         /* send message to content script */
         await browser.tabs.sendMessage(tab.id, {type: "TOGGLE_OVERLAY"});

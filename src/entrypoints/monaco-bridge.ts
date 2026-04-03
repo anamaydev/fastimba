@@ -1,4 +1,5 @@
 import type * as Monaco from 'monaco-editor';
+import { emmetHTML, emmetCSS, emmetJSX } from 'emmet-monaco-es'
 import {initVimMode, VimAdapterInstance } from 'monaco-vim';
 import VimStatusBar from "../monaco/VimStatusBar";
 import styles from "./styles.ts";
@@ -32,6 +33,7 @@ interface PostToContent {
 // noinspection JSUnusedGlobalSymbols
 export default defineUnlistedScript(() => {
   let userPreference: UserPreferenceType | null = null;
+  let monacoInstance: typeof window.monaco | null = null;
   let editorInstance:  Monaco.editor.ICodeEditor | null = null;
   let isScrimViewMounted = false;
   let waitForEditor: NodeJS.Timeout | null = null;
@@ -39,6 +41,7 @@ export default defineUnlistedScript(() => {
   let vimMode: VimAdapterInstance | null = null;
   let isInEditMode = false;
   const {editorStyles} = styles;
+  let disposeEmmet: (() => void) | null = null;
 
   /**
    * Post a message to the content script
@@ -76,9 +79,11 @@ export default defineUnlistedScript(() => {
     /* Guard against missing dependencies */
     if(!userPreference) return;
     if(!editorInstance) return;
+    if(!monacoInstance) return;
 
-    const {relativeLineNumbers, vim} = userPreference;
+    const {relativeLineNumbers, vim, emmet} = userPreference;
     const editor = editorInstance;
+    const monaco = monacoInstance;
 
     /* Container for injected styles */
     const styleEl = document.createElement('style');
@@ -89,8 +94,20 @@ export default defineUnlistedScript(() => {
     document.head.appendChild(styleEl);
 
     /**
+     * Feature: Emmet
+     * Registers emmet abbreviation expansion as a completion provider
+     * Works across HTML, CSS, and JSX/TSX compatible languages
+     **/
+    if (emmet) {
+      const disposeHTML = emmetHTML(monaco, ['html'], { tokenizer: 'standard' })
+      const disposeCSS = emmetCSS(monaco, ['css', 'scss', 'less'], { tokenizer: 'standard' })
+      const disposeJSX = emmetJSX(monaco, ['javascript', 'typescript', 'javascriptreact', 'typescriptreact'], { tokenizer: 'standard' })
+      disposeEmmet = () => { disposeHTML(); disposeCSS(); disposeJSX(); }
+    }
+
+    /**
      * Feature: Relative Line Numbers
-     * shows line numbers relative to cursor position
+     * Shows line numbers relative to cursor position
      **/
     if(relativeLineNumbers) {
       editor.updateOptions({
@@ -178,17 +195,23 @@ export default defineUnlistedScript(() => {
     /* Guard against missing dependencies */
     if(!userPreference) return;
     if(!editorInstance) return;
+    if(!monacoInstance) return;
 
-    const {relativeLineNumbers, vim} = userPreference;
+    const {relativeLineNumbers, vim, emmet} = userPreference;
+
+    /**
+     * Clean up: Emmet
+     **/
+    if (emmet && disposeEmmet) {
+      disposeEmmet();
+      disposeEmmet = null;
+    }
 
     /**
      * Clean up: Relative Line Numbers
-     * Remove injected styles and reset to default line numbering
+     * Reset to default line numbering
      **/
     if(relativeLineNumbers) {
-      /* Clean up injected custom styles */
-      document.getElementById('fastimba-styles')?.remove();
-
       /* Reset the editor to default options */
       editorInstance.updateOptions({
         lineNumbers: "on",
@@ -203,6 +226,9 @@ export default defineUnlistedScript(() => {
       vimMode.dispose();
       vimMode = null;
     }
+
+    /* Remove the injected custom styles */
+    document.getElementById('fastimba-styles')?.remove();
   };
 
   /**
@@ -283,11 +309,13 @@ export default defineUnlistedScript(() => {
        * Once found, store reference and clear the polling interval
        **/
       waitForEditor = setInterval(() => {
+        const monaco = window.monaco;
         const editor = window.monaco?.editor.getEditors()[0];
-        if (!editor) return;
+        if (!editor || !monaco) return;
 
         /* Editor found, stop polling */
         if(waitForEditor) clearInterval(waitForEditor);
+        monacoInstance = monaco;
         editorInstance = editor;
       }, 100);
     }else if (!scrimViewEl && isScrimViewMounted) {
@@ -299,6 +327,7 @@ export default defineUnlistedScript(() => {
       isScrimViewMounted = false;
       modeEditObserver.disconnect();
       editorInstance = null;
+      monacoInstance = null;
       postToContent({type: "EDITOR_ACTIVE_MODE_UPDATE", payload: "view"});
     }
   });

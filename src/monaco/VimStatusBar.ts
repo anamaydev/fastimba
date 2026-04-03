@@ -15,7 +15,6 @@ export default class VimStatusBar {
   private cursorPositionEl!: HTMLElement;
   private inputEl!: HTMLInputElement;
   private notificationEl!: HTMLElement;
-  // private notificationIconEl!: SVGElement;
   private notificationTextEl!: HTMLElement;
   private inputHandler: ((e: KeyboardEvent) => void) | null = null;
 
@@ -123,7 +122,6 @@ export default class VimStatusBar {
 
     /* Remove any previous listener before adding a new one */
     if (this.inputHandler) {
-      console.log("removed input handler");
       this.inputEl.removeEventListener("keydown", this.inputHandler);
       this.inputHandler = null;
     }
