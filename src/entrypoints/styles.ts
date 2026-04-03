@@ -1,10 +1,11 @@
 export default {
-  relativeLineNumbersStyles: `
+  editorStyles: `
+    /* Relative line Numbers */
     .active-line-number {
       color: #d4d4d899 !important;
     }
-  `,
-  vimStatusBarStyles: `
+
+    /* Vim Status Bar */
     #fastimba-status-bar {
       position: absolute !important;
       height: 1.75rem !important;

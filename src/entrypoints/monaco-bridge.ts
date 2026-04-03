@@ -1,7 +1,7 @@
 import type * as Monaco from 'monaco-editor';
 import {initVimMode, VimAdapterInstance } from 'monaco-vim';
 import VimStatusBar from "../monaco/VimStatusBar";
-import templates from "./templates.ts";
+import styles from "./styles.ts";
 
 /**
  * Configuration interface for user preferences
@@ -37,7 +37,7 @@ export default defineUnlistedScript(() => {
   let waitForEditor: NodeJS.Timeout | null = null;
   let statusBarParentEl: HTMLElement | null = null;
   let vimMode: VimAdapterInstance | null = null;
-  const {relativeLineNumbersStyles, vimStatusBarStyles} = templates;
+  const {editorStyles} = styles;
 
   /**
    * Post a message to the content script
@@ -72,20 +72,19 @@ export default defineUnlistedScript(() => {
     const {relativeLineNumbers, vim} = userPreference;
     const editor = editorInstance;
 
-    /* Container for all injected styles */
+    /* Container for injected styles */
     const styleEl = document.createElement('style');
     styleEl.id = 'fastimba-styles';
+
+    /* Inject custom CSS for styling */
+    styleEl.textContent = editorStyles;
+    document.head.appendChild(styleEl);
 
     /**
      * Feature: Relative Line Numbers
      * shows line numbers relative to cursor position
      **/
     if(relativeLineNumbers) {
-      /* Inject custom CSS for styling relative line numbers */
-      styleEl.textContent = relativeLineNumbersStyles;
-      document.head.appendChild(styleEl);
-
-      /* Configure monaco editor line numbering */
       editor.updateOptions({
         lineNumbers: (lineNumber => {
           const activeLineNumber = editor.getPosition()?.lineNumber ?? lineNumber;
@@ -101,11 +100,7 @@ export default defineUnlistedScript(() => {
      * Enables vim keybindings and status bar showing mode/registers
      **/
     if(vim) {
-      /* Inject CSS styles for vim status bar */
-      styleEl.textContent = vimStatusBarStyles;
-      document.head.appendChild(styleEl);
-
-      /* Reate status bar container and inject into console panel parent */
+      /* Create status bar container and inject into console panel parent */
       const statusBarEl = document.createElement('div');
       statusBarEl.id = 'fastimba-status-bar';
       statusBarParentEl?.appendChild(statusBarEl);
