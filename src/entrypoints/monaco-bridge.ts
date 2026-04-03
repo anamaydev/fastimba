@@ -37,6 +37,7 @@ export default defineUnlistedScript(() => {
   let waitForEditor: NodeJS.Timeout | null = null;
   let statusBarParentEl: HTMLElement | null = null;
   let vimMode: VimAdapterInstance | null = null;
+  let isInEditMode = false;
   const {editorStyles} = styles;
 
   /**
@@ -56,7 +57,14 @@ export default defineUnlistedScript(() => {
   const handleContentMessage = (event: MessageEvent): void => {
     if (event.source !== window) return;            /* Exit if the message is not from the same window */
     if(event.data.source !== "fastimba") return;    /* Exit if the messages is not from fastimba extension */
-    if(event.data.type === "FEATURE_SETTINGS_UPDATE") userPreference = event.data.payload;
+    if(event.data.type === "FEATURE_SETTINGS_UPDATE") {
+      userPreference = event.data.payload;
+      /* Re apply features with new settings */
+      if (isInEditMode && editorInstance) {
+        removeEditorFeatures();
+        addEditorFeatures();
+      }
+    }
   }
 
   /**
@@ -219,11 +227,13 @@ export default defineUnlistedScript(() => {
 
       /* Handle mode transitions */
       if (editorMode === "mode-edit"){
+        isInEditMode = true;
         /* Entering edit mode: notify content script and enable features */
         postToContent({type: "EDITOR_ACTIVE_MODE_UPDATE", payload: "edit"});
         addEditorFeatures();
       }
       else if(editorMode === "mode-view"){
+        isInEditMode = false;
         /* Entering view mode: notify content script and enable features */
         postToContent({type: "EDITOR_ACTIVE_MODE_UPDATE", payload: "view"});
         removeEditorFeatures();
