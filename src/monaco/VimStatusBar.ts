@@ -165,6 +165,7 @@ export default class VimStatusBar {
   };
 
   showNotification(text: string | Node) {
+    console.log("showNotification", text);
     /* Add notification text */
     if (typeof text === "string") this.notificationTextEl.textContent = text
     else this.notificationTextEl.textContent = text.textContent;

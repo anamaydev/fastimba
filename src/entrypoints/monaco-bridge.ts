@@ -38,6 +38,7 @@ export default defineUnlistedScript(() => {
   let isScrimViewMounted = false;
   let waitForEditor: NodeJS.Timeout | null = null;
   let statusBarParentEl: HTMLElement | null = null;
+  let statusBarAttr: string | null = null;
   let vimMode: VimAdapterInstance | null = null;
   let isInEditMode = false;
   const {editorStyles} = styles;
@@ -128,6 +129,7 @@ export default defineUnlistedScript(() => {
       /* Create status bar container and inject into console panel parent */
       const statusBarEl = document.createElement('div');
       statusBarEl.id = 'fastimba-status-bar';
+      statusBarEl.setAttribute("data-parent", `${statusBarAttr?.toLowerCase()}`);
       statusBarParentEl?.appendChild(statusBarEl);
 
       /**
@@ -168,8 +170,14 @@ export default defineUnlistedScript(() => {
        **/
       editor.onKeyDown((e) => {
         if (e.keyCode === window.monaco.KeyCode.Escape) {
+          let tab: HTMLElement | null = null;
+
           /* Find the currently active editor tab */
-          const tab = document.querySelector('ide-editor-tab.checked') as HTMLElement;
+          if(statusBarAttr === "ide-console-panel")
+            tab = document.querySelector('ide-editor-tab.checked') as HTMLElement;
+          else if(statusBarAttr === "si-viewgroup-view")
+            tab = document.querySelector('si-any-tab.selected.SIFile') as HTMLElement;
+
           if (!tab) return;
 
           /* Temporarily make tab.focus() a no-op so scrimba's releaseFocusFromWidget() does nothing */
@@ -268,17 +276,26 @@ export default defineUnlistedScript(() => {
   });
 
   /**
-   * Observer: IDE Console Panel Watcher
-   * Waits for ide-console-panel to mount, then saves reference to its parent
-   *
+   * Observer: Status bar target element Watcher
+   * Waits for ide-console-panel or si-viewgroup-view.vg00 to mount, then saves reference
    * Disconnects immediately after finding the element to avoid continued observation
    **/
-  const ideConsolePanelMountObserver = new MutationObserver(() => {
-    const ideConsolePanelEl = document.querySelector("ide-console-panel");
-    if (!ideConsolePanelEl) return;
+  const statusBarTargetMountObserver = new MutationObserver(() => {
+    const target =
+      document.querySelector("ide-console-panel") ??
+      document.querySelector("si-viewgroup-view.vg00");
 
-    statusBarParentEl = ideConsolePanelEl.parentElement;  /* Parent element reference for status bar injection */
-    ideConsolePanelMountObserver.disconnect();            /* Disconnect after finding the element */
+    if (target) {
+      /* Element reference for status bar injection */
+      statusBarParentEl =
+        target.tagName.toLowerCase() === "ide-console-panel"
+          ? target.parentElement
+          : target as HTMLElement;
+
+      /* Custom attribute for styling the element */
+      statusBarAttr = target.tagName.toLowerCase();
+      statusBarTargetMountObserver.disconnect(); /* Disconnect after finding the element */
+    }
   })
 
   /**
@@ -301,7 +318,7 @@ export default defineUnlistedScript(() => {
       /* scrim-view mounted, start watching for mode-edit */
       isScrimViewMounted = true;
       modeEditObserver.observe(scrimViewEl, {attributes: true, attributeFilter: ["class"], attributeOldValue: true});
-      ideConsolePanelMountObserver.observe(scrimViewEl, {childList: true, subtree: true});
+      statusBarTargetMountObserver.observe(scrimViewEl, {childList: true, subtree: true});
 
       /**
        * Poll for Monaco editor instance
@@ -363,7 +380,9 @@ export default defineUnlistedScript(() => {
     opLayersMountObserver.disconnect();
     scrimViewMountObserver.disconnect();
     modeEditObserver.disconnect();
-    ideConsolePanelMountObserver.disconnect();
+    statusBarTargetMountObserver.disconnect();
     if(waitForEditor) clearInterval(waitForEditor);
+    if (vimMode) vimMode.dispose();
+    if (disposeEmmet) disposeEmmet();
   })
 });

@@ -6,11 +6,22 @@ export default {
     }
 
     /* Vim Status Bar */
-    #fastimba-status-bar {
+    #fastimba-status-bar[data-parent="ide-console-panel"] {
       position: absolute !important;
       height: 1.75rem !important;
       width: 100% !important;
       top: -1.75rem !important;
+      left: 0 !important;
+      right: 0 !important;
+      color: lch(47.87 5.19 285.84) !important;
+    }
+    
+    #fastimba-status-bar[data-parent="si-viewgroup-view"] {
+      position: absolute !important;
+      height: 1.75rem !important;
+      width: 100% !important;
+      // top: -1.75rem !important;
+      bottom: 0 !important;
       left: 0 !important;
       right: 0 !important;
       color: lch(47.87 5.19 285.84) !important;
@@ -33,7 +44,7 @@ export default {
     }
     
     .status-bar__content{
-      z-index: 1 !important;
+      z-index: 2 !important;
       padding: 0.25rem !important;
       flex-direction: row !important;
       justify-content: space-between !important;
@@ -108,7 +119,7 @@ export default {
     }
     
     .status-bar__notification{
-      z-index: 0 !important;
+      z-index: 1 !important;
       justify-content: start !important;
       padding-left: 0.25rem !important;
     }
@@ -122,7 +133,6 @@ export default {
       justify-content: center !important;
       align-items: center !important;
       gap: 0.5rem !important;
-      transform: translateY(0);
       --bgi: linear-gradient(to bottom, lch(20 14 18.6 / 1), lch(20 14 18.6 / 1));
       color: lch(75 66.7 18.6 / 1) !important; 
     }
