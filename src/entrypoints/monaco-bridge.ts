@@ -71,6 +71,18 @@ export default defineUnlistedScript(() => {
     }
   }
 
+  /* Attach focus listener to an editor instance */
+  const attachFocusListener = (editor: Monaco.editor.ICodeEditor) => {
+    editor.onDidFocusEditorWidget(() => {
+      if (editorInstance?.getId() === editor.getId()) return; /* same editor, nothing to do */
+      editorInstance = editor;
+      if (isInEditMode) {
+        removeEditorFeatures();
+        addEditorFeatures();
+      }
+    });
+  };
+
   /**
    * Apply user-configured features to the editor
    * Enables vim mode, relative line numbers, or both based on preferences
@@ -327,13 +339,17 @@ export default defineUnlistedScript(() => {
        **/
       waitForEditor = setInterval(() => {
         const monaco = window.monaco;
-        const editor = window.monaco?.editor.getEditors()[0];
-        if (!editor || !monaco) return;
+        if(!monaco) return; /* return if monaco not found */
+        monacoInstance = monaco;
+
+        /* Attach to all editors already alive when Monaco loads */
+        monaco.editor.getEditors().forEach(attachFocusListener);
+
+        /* Attach to the new editor created after Monaco loads */
+        monaco.editor.onDidCreateEditor(attachFocusListener);
 
         /* Editor found, stop polling */
         if(waitForEditor) clearInterval(waitForEditor);
-        monacoInstance = monaco;
-        editorInstance = editor;
       }, 100);
     }else if (!scrimViewEl && isScrimViewMounted) {
       /** scrim-view unmounted,
