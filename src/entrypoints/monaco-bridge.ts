@@ -34,6 +34,9 @@ interface PostToContent {
 export default defineUnlistedScript(() => {
   let userPreference: UserPreferenceType | null = null;
   let monacoInstance: typeof window.monaco | null = null;
+  let editorListeners: Map<string, {dispose: () => void}> = new Map();
+  let onCreateEditorDisposable: { dispose: () => void } | null = null;
+  let keyDownDisposable: {dispose: () => void} | null = null;
   let editorInstance:  Monaco.editor.ICodeEditor | null = null;
   let currentScrimViewEl: Element | null = null;
   let isScrimViewMounted = false;
@@ -74,14 +77,23 @@ export default defineUnlistedScript(() => {
 
   /* Attach focus listener to an editor instance */
   const attachFocusListener = (editor: Monaco.editor.ICodeEditor) => {
-    editor.onDidFocusEditorWidget(() => {
-      if (editorInstance?.getId() === editor.getId()) return; /* same editor, nothing to do */
-      editorInstance = editor;
+    const editorId = editor.getId();
+
+    /* Avoid duplicate listeners on same editor */
+    if (editorListeners.has(editorId)) return;
+
+    const disposable = editor.onDidFocusEditorWidget(() => {
+      if (editorInstance?.getId() === editor.getId()) return; /* Same editor, nothing to do */
+
+      editorInstance = editor;  /* Assign new editor instance */
       if (isInEditMode) {
-        removeEditorFeatures();
-        addEditorFeatures();
+        removeEditorFeatures(); /* Clean up previous editor features */
+        addEditorFeatures();    /* Add features to new editor instance */
       }
     });
+
+    /* Store the disposable to clean it up later */
+    editorListeners.set(editorId, disposable);
   };
 
   /**
@@ -181,7 +193,7 @@ export default defineUnlistedScript(() => {
        * Timing:
        * - Use queueMicrotask() to restore before browser paints, avoiding visual flicker.
        **/
-      editor.onKeyDown((e) => {
+      keyDownDisposable = editor.onKeyDown((e) => {
         if (e.keyCode === window.monaco.KeyCode.Escape) {
           let tab: HTMLElement | null = null;
 
@@ -220,32 +232,27 @@ export default defineUnlistedScript(() => {
 
     const {relativeLineNumbers, vim, emmet} = userPreference;
 
-    /**
-     * Clean up: Emmet
-     **/
+    /* Clean up: Emmet */
     if (emmet && disposeEmmet) {
       disposeEmmet();
       disposeEmmet = null;
     }
 
-    /**
-     * Clean up: Relative Line Numbers
-     * Reset to default line numbering
-     **/
+    /* Clean up: Relative Line Numbers, Reset to default line numbering */
     if(relativeLineNumbers) {
-      /* Reset the editor to default options */
-      editorInstance.updateOptions({
-        lineNumbers: "on",
-      })
+      editorInstance.updateOptions({lineNumbers: "on"})
     }
 
-    /**
-     * Clean up: Vim Mode
-     * Properly dispose of vim mode adapter to prevent memory leaks
-     **/
+    /* Clean up: Vim Mode, Properly dispose of vim mode adapter to prevent memory leak */
     if(vim && vimMode) {
       vimMode.dispose();
       vimMode = null;
+    }
+
+    /* Clean up: Escape key handler */
+    if(keyDownDisposable) {
+      keyDownDisposable.dispose();
+      keyDownDisposable = null;
     }
 
     /* Remove the injected custom styles */
@@ -331,6 +338,10 @@ export default defineUnlistedScript(() => {
     if (scrimViewEl && scrimViewEl !== currentScrimViewEl) {
       currentScrimViewEl = scrimViewEl;
       isScrimViewMounted = false; /* Reset flag to trigger initialization */
+
+      /* dispose focus listener attached to the old editor instances */
+      editorListeners.forEach(disposable => disposable.dispose());
+      editorListeners.clear();
     }
 
     if (scrimViewEl && !isScrimViewMounted) {
@@ -338,37 +349,21 @@ export default defineUnlistedScript(() => {
       isScrimViewMounted = true;
       modeEditObserver.observe(scrimViewEl, {attributes: true, attributeFilter: ["class"], attributeOldValue: true});
       statusBarTargetMountObserver.observe(scrimViewEl, {childList: true, subtree: true});
-
-      /**
-       * Poll for Monaco editor instance
-       * Monaco doesn't provide a ready event, so poll every 100ms
-       * Once found, store reference and clear the polling interval
-       **/
-      waitForEditor = setInterval(() => {
-        const monaco = window.monaco;
-        if(!monaco) return; /* return if monaco not found */
-        monacoInstance = monaco;
-
-        /* Attach to all editors already alive when Monaco loads */
-        monaco.editor.getEditors().forEach(attachFocusListener);
-
-        /* Attach to the new editor created after Monaco loads */
-        monaco.editor.onDidCreateEditor(attachFocusListener);
-
-        /* Editor found, stop polling */
-        if(waitForEditor) clearInterval(waitForEditor);
-      }, 100);
     }else if (!scrimViewEl && isScrimViewMounted) {
       /** scrim-view unmounted,
        * - Stop watching for mode-edit,
        * - Set editor instance to null
+       * - Dispose focus listeners added to the editors
        * - Send message to content script
        **/
       currentScrimViewEl = null;
       isScrimViewMounted = false;
       modeEditObserver.disconnect();
+
+      /* dispose focus listener attached to the old editor instances */
+      editorListeners.forEach(disposable => disposable.dispose());
+      editorListeners.clear();
       editorInstance = null;
-      monacoInstance = null;
       postToContent({type: "EDITOR_ACTIVE_MODE_UPDATE", payload: "view"});
     }
   });
@@ -384,6 +379,28 @@ export default defineUnlistedScript(() => {
     if(!opLayersEl) return;
     /* Disconnect opLayerMountObserver and start observing for scrim-view element */
     opLayersMountObserver.disconnect();
+
+    /**
+     * Poll for Monaco editor instance
+     * Monaco doesn't provide a ready event, so poll every 100ms
+     * Once found, store reference and clear the polling interval
+     * Attach onDidCreateEditor and onDidFocusEditorWidget listeners to the editor instances
+     **/
+    waitForEditor = setInterval(() => {
+      const monaco = window.monaco;
+      if(!monaco) return; /* return if monaco not found */
+      monacoInstance = monaco;
+
+      /* Attach to all editors already alive when Monaco loads */
+      monaco.editor.getEditors().forEach(attachFocusListener);
+
+      /* Attach ONCE to future editors (never detach - it's global) */
+      onCreateEditorDisposable = monaco.editor.onDidCreateEditor(attachFocusListener);
+
+      /* Editor found, stop polling */
+      if(waitForEditor) clearInterval(waitForEditor);
+    }, 100);
+
     scrimViewMountObserver.observe(opLayersEl, {childList: true, subtree: true});
   });
 
@@ -407,6 +424,11 @@ export default defineUnlistedScript(() => {
     statusBarTargetMountObserver.disconnect();
     if(waitForEditor) clearInterval(waitForEditor);
     if (vimMode) vimMode.dispose();
+    if(keyDownDisposable) keyDownDisposable.dispose();
     if (disposeEmmet) disposeEmmet();
+    editorListeners.forEach(disposable => disposable.dispose());
+    editorListeners.clear();
+    if(onCreateEditorDisposable) onCreateEditorDisposable.dispose();
+    monacoInstance = null;
   })
 });
