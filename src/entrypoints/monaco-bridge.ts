@@ -35,6 +35,7 @@ export default defineUnlistedScript(() => {
   let userPreference: UserPreferenceType | null = null;
   let monacoInstance: typeof window.monaco | null = null;
   let editorInstance:  Monaco.editor.ICodeEditor | null = null;
+  let currentScrimViewEl: Element | null = null;
   let isScrimViewMounted = false;
   let waitForEditor: NodeJS.Timeout | null = null;
   let statusBarParentEl: HTMLElement | null = null;
@@ -326,6 +327,12 @@ export default defineUnlistedScript(() => {
   const scrimViewMountObserver = new MutationObserver(() => {
     const scrimViewEl = document.querySelector('scrim-view');
 
+    /* scrim-view element changed or was null before */
+    if (scrimViewEl && scrimViewEl !== currentScrimViewEl) {
+      currentScrimViewEl = scrimViewEl;
+      isScrimViewMounted = false; /* Reset flag to trigger initialization */
+    }
+
     if (scrimViewEl && !isScrimViewMounted) {
       /* scrim-view mounted, start watching for mode-edit */
       isScrimViewMounted = true;
@@ -357,6 +364,7 @@ export default defineUnlistedScript(() => {
        * - Set editor instance to null
        * - Send message to content script
        **/
+      currentScrimViewEl = null;
       isScrimViewMounted = false;
       modeEditObserver.disconnect();
       editorInstance = null;
