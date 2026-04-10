@@ -6,6 +6,8 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   srcDir: 'src',
   manifest: {
+    name: "Fastimba",
+    description: "Adds Vim keybindings, relative line numbers, and Emmet to Scrimba's Monaco editor.",
     action: {},
     web_accessible_resources: [
       {
