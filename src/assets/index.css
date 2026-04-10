@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
 @theme{
-  /* custom color */
-  --color-emerald-400: lch(66.69 53.46 161.39);
-  --color-obsidian-400: lch(9.2 3.1 267.3);
-  --color-iris-400: lch(47.87 5.19 285.84);
-  --color-sapphire-300: lch(66.3 12.9 260.8);
-  --color-ash-100: lch(86.7 0 0 / 1);
-  --color-ash-50: lch(96.32 2.56 250.94);
-  
-  /* custom font */
+  /* Custom font */
   --font-monosans: "Helvetica Neue", Verdana, sans-serif;
+  
+  /* Custom colors */
+  --color-surface-overlay: rgba(0, 0, 0, 0.1);
+  --color-surface-card: rgba(0, 0, 0, 0.3);
+  --color-surface-deep: rgba(0, 0, 0, 0.4);
+  --color-surface-light-overlay: rgba(225, 225, 225, 0.1);
+  
+  --color-primary: rgba(255, 255, 255, 0.75);
+  --color-secondary: rgba(255, 255, 255, 0.45);
+  --color-bright: rgba(255, 255, 255, 0.65);
+  --color-light: rgba(255, 255, 255, 0.3);
+  
+  --color-syntax-keyword: rgba(255, 154, 141, 0.45);
+  --color-syntax-variable: rgba(215, 187, 235, 0.45);
+  --color-syntax-string: rgba(119, 179, 209, 0.45);
+  --color-syntax-console: rgba(250, 255, 178, 0.45);
+  --color-syntax-punctuation: rgba(204, 204, 204, 0.45);
+  --color-syntax-tag: rgba(250, 255, 178, 0.45);
+  
+  /* Custom border radius */
+  --radius-card: 24px;
+  --radius-panel: 20px;
+  --radius-toggle-track: 6px;
+  --radius-toggle-thumb: 4px;
+  
+  /* Custom font sizes */
+  --text-2xs: 0.625rem;
+  --text-3xs: 0.5rem;
+  
+  --text-2xs--line-height: 0.625rem;
+  --text-3xs--line-height: 0.5rem;
 }
 
-/* set default font */
 @layer base {
   body{
-    @apply font-monosans text-sm leading-5.5;
+    @apply font-monosans text-primary text-2xs;
   }
 }
 
-/* container box-shadow */
-@utility container-shadow{
-  box-shadow: rgba(255, 255, 255, 0.1) 0 0 0 0.5px inset;
+@utility glass-card {
+  backdrop-filter: blur(12px);
+  background-color: var(--color-surface-card);
+}
+
+@utility glass-deep {
+  backdrop-filter: blur(12px);
+  background-color: var(--color-surface-deep);
+}
+
+@utility glass-overlay {
+  backdrop-filter: blur(12px);
+  background-color: var(--color-surface-overlay);
+}
+
+@utility glass-overlay-light {
+  backdrop-filter: blur(12px);
+  background-color: var(--color-surface-light-overlay);
 }

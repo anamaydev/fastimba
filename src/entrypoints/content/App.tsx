@@ -1,136 +1,125 @@
-import type {ChangeEvent} from "react";
-import {Logo} from "@/components/icons/index";
-import Toggle from "@/components/Toggle";
-
-interface UserPreferenceType {
-  vim: boolean;
-  relativeLineNumbers: boolean;
-  emmet: boolean;
-}
-
-interface PostToMonacoBridge {
-  type: "FEATURE_SETTINGS_UPDATE",
-  payload: UserPreferenceType
-}
+import Header from "@/components/Header.tsx";
+import FeatureCard from "@/components/FeatureCard.tsx";
+import CodeBlock from "@/components/CodeBlock.tsx";
+import ToggleButton from "@/components/ToggleButton.tsx";
+import {usePreferencesContext} from "@/context/preferences/usePreferencesContext.ts";
 
 const App = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrimbaTitle, setScrimbaTitle] = useState<string | null>(null)
-  const [scrimbaThumbnail, setScrimbaThumbnail] = useState<string | null>(null)
-  const [_editorMode, setEditorMode] = useState<"edit" | "view">("view");
-  const [userPreference, setUserPreference] = useState<UserPreferenceType>(() => {
-    const savedUserPreference = localStorage.getItem("userPreference");
-    return savedUserPreference ?
-      JSON.parse(savedUserPreference) :
-      {
-        vim: false,
-        relativeLineNumbers: false,
-        emmet: false,
-      };
-  })
-
-  /* handle settings change */
-  const handleToggleSettingsData = (event: ChangeEvent<HTMLInputElement>) => {
-    const {name, checked} = event.target
-    setUserPreference(prevToggleSettingsData => ({
-      ...prevToggleSettingsData,
-      [name]: checked,
-    }))
-  }
-
-  /* handle posting message to monaco bridge script */
-  const postToMonacoBridge = (message: PostToMonacoBridge) => {
-    window.postMessage({
-      source: "fastimba",
-      ...message
-    }, "*");
-  };
-
-  /* sync feature settings data changes to localStorage and post message to monaco bridge */
-  useEffect(() => {
-    localStorage.setItem("userPreference", JSON.stringify(userPreference));
-    postToMonacoBridge({type: "FEATURE_SETTINGS_UPDATE", payload: userPreference});
-  }, [userPreference]);
-
-  /* --- handle received message from a service worker --- */
-  useEffect(() => {
-    const handleMessage = (message: {type: string}) => {
-      if(message.type === "TOGGLE_OVERLAY")
-        setIsOpen(prevIsOpen => !prevIsOpen);
-    };
-
-    browser.runtime.onMessage.addListener(handleMessage);
-    return () => browser.runtime.onMessage.removeListener(handleMessage);
-  }, []);
-
-  /* --- handle received message from the bridge script --- */
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if(event.source !== window) return;             /* exit if the message is not from the same window */
-      if (event.data.source !== "fastimba") return;   /* exit if the messages is not from fastimba extension */
-
-      /* handle editor mode updates */
-      if (event.data.type === "EDITOR_ACTIVE_MODE_UPDATE") setEditorMode(event.data.payload);
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  /* get and assign Scrimba title and thumbnail */
-  useEffect(() => {
-    const ogTitle: HTMLMetaElement | null = document.querySelector("meta[property='og:title']");
-    const ogImage: HTMLMetaElement | null = document.querySelector("meta[property='og:image']");
-
-    if(ogTitle) setScrimbaTitle(ogTitle.content);
-    if(ogImage) setScrimbaThumbnail(ogImage.content);
-  }, []);
+  const {isOpen} = usePreferencesContext();
+  const demoGutterLines = [4, 3, 2, 1, 5, 1];
 
   return (
     <div
       className={
-        `${isOpen ? "flex" : "hidden"} w-90 h-auto p-2 rounded-sm fixed z-10000 top-6 right-16 flex-col gap-1 container-shadow backdrop-blur-sm bg-obsidian-400/80 text-ash-100`
+        `${isOpen ? "flex" : "hidden"} w-78 h-auto fixed z-10000 top-2 right-2 flex flex-col gap-1`
       }
     >
-      {/* header */}
-      <div className="flex justify-start items-center gap-2">
-        <Logo className="size-4"/>
-        <span>Fastimba</span>
-        <span className="h-4 w-px bg-iris-400 rotate-20 opacity-50"></span>
-        {scrimbaTitle && <span className="opacity-70">{scrimbaTitle}</span>}
-      </div>
+      <Header/>
 
-      {/* thumbnail */}
-      {scrimbaThumbnail && (
-        <div className="w-full h-full max-h-45 rounded-sm object-cover overflow-hidden border-[0.5px] border-white/20">
-          <img className="w-full h-full" src={scrimbaThumbnail} alt="Scrimba Thumbnail" />
-        </div>
-      )}
+      {/* Relative Line Numbers */}
+      <FeatureCard className="">
+        <FeatureCard.Visual className="w-14">
+          {/* TODO: Animate Line Numbers */}
+          <div className="w-full h-full flex flex-col justify-center items-center gap-1">
+            <span>4</span>
+            <span>3</span>
+            <span>2</span>
+            <span>1</span>
+            <span className="text-secondary">5</span>
+            <span>1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+          </div>
+        </FeatureCard.Visual>
 
-      <hr className="h-[0.5px] my-1 rounded-full text-white/10" />
+        <FeatureCard.Context className="flex-1">
+          <FeatureCard.Context.Title>Line Numbers</FeatureCard.Context.Title>
+          <FeatureCard.Context.Description>
+            <p>
+              <strong className="text-primary">Relative</strong>{" "}
+              <span>Line Numbers shows</span>{" "}
+              <strong className="text-primary">distance from cursor</strong>
+              <span>. Great for quick movement and jumps.</span>
+            </p>
+          </FeatureCard.Context.Description>
+          <ToggleButton name="relativeLineNumbers" className="w-full" leftOption="Absolute" rightOption="Relative" />
+        </FeatureCard.Context>
+      </FeatureCard>
 
-      {/* settings */}
-      <div className="flex flex-col gap-0">
-        <Toggle
-          label="Vim"
-          name="vim"
-          toggleState={userPreference.vim}
-          onChange={handleToggleSettingsData}
-        />
-        <Toggle
-          label="Relative Line Numbers"
-          name="relativeLineNumbers"
-          toggleState={userPreference.relativeLineNumbers}
-          onChange={handleToggleSettingsData}
-        />
-        <Toggle
-          label="Emmet"
-          name="emmet"
-          toggleState={userPreference.emmet}
-          onChange={handleToggleSettingsData}
-        />
-      </div>
+      {/* Vim */}
+      <FeatureCard className="">
+        <FeatureCard.Visual className="flxe-1 w-full">
+          {/* TODO: Animate Vim */}
+          <CodeBlock className="flex-1 w-full">
+            <CodeBlock.Gutter lines={demoGutterLines} activeLine={5} />
+            <CodeBlock.Code>
+              <p><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>name</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>'John'</CodeBlock.String>;</p>
+              <p><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>age</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>23</CodeBlock.String>;</p>
+              <p><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>course</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>'React'</CodeBlock.String>;</p>
+              <p>&nbsp;</p>
+              <p><CodeBlock.ConsoleToken>console</CodeBlock.ConsoleToken><CodeBlock.Punctuation>.</CodeBlock.Punctuation>log(<CodeBlock.Variable>name</CodeBlock.Variable>);</p>
+              <p><CodeBlock.ConsoleToken>console</CodeBlock.ConsoleToken><CodeBlock.Punctuation>.</CodeBlock.Punctuation>log(<CodeBlock.Variable>age</CodeBlock.Variable>);</p>
+            </CodeBlock.Code>
+          </CodeBlock>
+          <FeatureCard.Badge>4k</FeatureCard.Badge>
+        </FeatureCard.Visual>
+
+        <FeatureCard.Context className="flex-1">
+          <FeatureCard.Context.Title>Vim</FeatureCard.Context.Title>
+          <FeatureCard.Context.Description>
+            <p>
+              <strong className="text-primary">Vim </strong>
+              <span>keybindings for faster editing, </span>
+              <strong className="text-primary">avoid </strong>
+              <span>the </span>
+              <strong className="text-primary">mouse</strong>
+              <span>.</span>
+            </p>
+          </FeatureCard.Context.Description>
+          <ToggleButton name="vim"/>
+        </FeatureCard.Context>
+      </FeatureCard>
+
+      {/* Emmet */}
+      <FeatureCard className="">
+        <FeatureCard.Visual className="flxe-1 w-full">
+          {/* TODO: Animate Emmet */}
+          <CodeBlock className="flex-1 w-full">
+            <CodeBlock.Gutter lines={demoGutterLines} activeLine={5} />
+            <CodeBlock.Code className="text-syntax-tag">
+              <p>&lt;nav&gt;</p>
+              <div className="pl-3 flex flex-col gap-1">
+                <p>&lt;ul&gt;</p>
+                <div className="pl-3 flex flex-col gap-1">
+                  <p>&lt;li&gt;&lt;/li&gt;</p>
+                  <p>&lt;li&gt;&lt;/li&gt;</p>
+                </div>
+                <p>&lt;/ul&gt;</p>
+              </div>
+              <p>&lt;/nav&gt;</p>
+            </CodeBlock.Code>
+          </CodeBlock>
+          <FeatureCard.Badge>nav&gt;ul&gt;li*2</FeatureCard.Badge>
+        </FeatureCard.Visual>
+
+        <FeatureCard.Context className="flex-1">
+          <FeatureCard.Context.Title>Emmet</FeatureCard.Context.Title>
+          <FeatureCard.Context.Description>
+            <p>
+              <span>Turn short expressions into </span>
+              <span className="text-primary">HTML</span>
+              <span> and </span>
+              <span className="text-primary">CSS</span>
+              <span> using </span>
+              <strong className="text-primary">Emmet </strong>
+              <span>syntax</span>.
+            </p>
+          </FeatureCard.Context.Description>
+          <ToggleButton name="emmet" className="max-w-26" />
+        </FeatureCard.Context>
+      </FeatureCard>
     </div>
   )
-}
+};
 export default App;

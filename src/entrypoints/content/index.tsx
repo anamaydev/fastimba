@@ -1,10 +1,11 @@
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
+import PreferencesProvider from "@/context/preferences/PreferencesProvider.tsx";
 import '@/assets/index.css';
 
 export default defineContentScript({
   matches: ['*://scrimba.com/*'],
-  /* inject CSS in "ui" mode: styling applies only to extension UI and not to page's own styles */
+  /* Inject CSS in "ui" mode: styling applies only to extension UI and not to page's own styles */
   cssInjectionMode: 'ui',
 
   async main(ctx) {
@@ -12,7 +13,7 @@ export default defineContentScript({
       keepInDom: true,
     })
 
-    /* create a shadow-root-based UI container managed by WXT */
+    /* Create a shadow-root-based UI container managed by WXT */
     const ui = await createShadowRootUi(ctx, {
       name: "fastimba-app",
       position: "inline",
@@ -20,23 +21,27 @@ export default defineContentScript({
       append: "last",
       mode: "open",
       onMount: (container) => {
-        /* creat wrapper element to add as child (React can not mount directly into <body>) */
+        /* Creat wrapper element to add as child (React can not mount directly into <body>) */
         const app = document.createElement("div");
         container.appendChild(app);
 
-        /* create a root on the UI container and render a component */
+        /* Create a root on the UI container and render a component */
         const root = ReactDOM.createRoot(app);
-        root.render(<App/>);
+        root.render(
+          <PreferencesProvider>
+            <App/>
+          </PreferencesProvider>
+        );
 
-        /* return root so onRemove can unmount it */
+        /* Return root so onRemove can unmount it */
         return root;
       },
 
-      /* unmount the root when the UI is removed */
+      /* Unmount the root when the UI is removed */
       onRemove: (root) => { root?.unmount() }
     });
 
-    /* mount the UI */
+    /* Mount the UI */
     ui.mount();
   },
 });
