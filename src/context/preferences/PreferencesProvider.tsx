@@ -48,15 +48,11 @@ const PreferencesProvider = ({children}: PreferencesProviderProps) => {
     postToMonacoBridge({type: "FEATURE_SETTINGS_UPDATE", payload: preferences});
   }, [preferences]);
 
-  /* --- handle received message from a service worker --- */
+  /* --- handle toggle event bridged from the content script's top-level listener --- */
   useEffect(() => {
-    const handleMessage = (message: {type: string}) => {
-      if(message.type === "TOGGLE_OVERLAY")
-        setIsOpen(prevIsOpen => !prevIsOpen);
-    };
-
-    browser.runtime.onMessage.addListener(handleMessage);
-    return () => browser.runtime.onMessage.removeListener(handleMessage);
+    const handleToggle = () => setIsOpen(prevIsOpen => !prevIsOpen);
+    window.addEventListener("fastimba:toggle-overlay", handleToggle);
+    return () => window.removeEventListener("fastimba:toggle-overlay", handleToggle);
   }, []);
 
   return (

@@ -28,7 +28,7 @@ const RLN_RESTART_DELAY = 2000;
 
 /* badge: text shown in the badge */
 /* steps: how many lines to move */
-/* dir:   - k => -1, j => 1 */
+/* dir:   k => -1, j => 1 */
 const VIM_COMMANDS = [
   {badge: "4k", steps: 4, dir: -1},
   {badge: "2j", steps: 2, dir:  1},
