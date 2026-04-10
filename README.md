@@ -136,6 +136,6 @@ npm run compile
 
 Targets: 
 - **Chrome** (Manifest V3) 
-- **Firefox** (🚨Untested)
+- **Firefox** (Manifest V2)
 
 The extension activates only on `*://scrimba.com/*`.
