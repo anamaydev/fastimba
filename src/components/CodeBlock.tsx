@@ -7,7 +7,7 @@ interface TokenProps {children: ReactNode}
 
 const CodeBlock = ({children, className}: CodeBlockProps) => {
   return (
-    <div className={`w-full h-full pl-2 flex items-center gap-1 text-3xs ${className ?? ""}`}>
+    <div className={`w-full h-full pl-2 flex gap-1 text-3xs ${className ?? ""}`}>
       {children}
     </div>
   )
@@ -17,7 +17,7 @@ export default CodeBlock;
 CodeBlock.Gutter = function CodeBlockGutter({lines, activeLine, className}: CodeBlockGutterProps) {
   return (
     <div
-      className={`flex flex-col items-center gap-1 text-center whitespace-nowrap shrink-0 ${className ?? ""}`}
+      className={`flex flex-col gap-1 text-center whitespace-nowrap shrink-0 ${className ?? ""}`}
     >
       {lines.map((lineNimber, index) => (
         <span
@@ -34,7 +34,7 @@ CodeBlock.Gutter = function CodeBlockGutter({lines, activeLine, className}: Code
 CodeBlock.Code = function CodeBlockCode({ children, className }: CodeBlockCodeProps) {
   return (
     <div
-      className={`flex flex-col gap-1 items-start font-normal ${className ?? ""}`}
+      className={`flex flex-col gap-1 justify-start items-start font-normal ${className ?? ""}`}
     >
       {children}
     </div>
