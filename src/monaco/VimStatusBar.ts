@@ -1,10 +1,6 @@
 import type * as Monaco from 'monaco-editor';
 import {VimModeChangeEvent} from "monaco-vim";
 
-/**
- * VimStatusBar - displays vim mode, key buffer, and cursor position in the editor
- * Manages the status bar UI and handles vim mode changes and input commands
- **/
 export default class VimStatusBar {
   private node: HTMLElement;
   private editor: Monaco.editor.IStandaloneCodeEditor;
@@ -29,13 +25,6 @@ export default class VimStatusBar {
     this.setupDOM();
   }
 
-  /**
-   * HTML elements for
-   * - mode indicator
-   * - key buffer
-   * - cursor position
-   * - command input
-   **/
   private setupDOM() {
     this.node.innerHTML = `
       <div class="status-bar">
@@ -165,7 +154,6 @@ export default class VimStatusBar {
   };
 
   showNotification(text: string | Node) {
-    console.log("showNotification", text);
     /* Add notification text */
     if (typeof text === "string") this.notificationTextEl.textContent = text
     else this.notificationTextEl.textContent = text.textContent;

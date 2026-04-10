@@ -28,7 +28,6 @@ const PreferencesProvider = ({children}: PreferencesProviderProps) => {
   /* handle settings change */
   const handleTogglePreferences = (event: ChangeEvent<HTMLInputElement>) => {
     const {name, checked} = event.target
-    console.log("Preferences Changed: ", name, checked);
     setPreferences(prevPreferencesState => ({
       ...prevPreferencesState,
       [name]: checked,
