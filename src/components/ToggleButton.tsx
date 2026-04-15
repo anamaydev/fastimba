@@ -52,10 +52,10 @@ const ToggleButtonMark = ({toggleState, mark}: ToggleButtonMarkProps) => {
     );
   if (mark === "uncheck")
     return (
-      <Uncheck className={toggleState ? "text-black size-2 delay-200 opacity-0" : "text-black size-2 opacity-70"} />
+      <Uncheck className={clsx("text-black size-2", toggleState ? "delay-200 opacity-0" : "opacity-70")} />
     );
   return (
-    <Check className={toggleState ? "text-black size-2 opacity-70" : "text-black size-2 delay-200 opacity-0"} />
+    <Check className={clsx("text-black size-2", toggleState ? "opacity-70" : "delay-200 opacity-0")} />
   );
 };
 

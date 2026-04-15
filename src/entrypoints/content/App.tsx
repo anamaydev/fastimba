@@ -178,7 +178,7 @@ const App = () => {
           <Feature.Visual className="w-14">
             <div className="w-full h-full flex flex-col justify-center items-center gap-1">
               {Array.from({length: LINE_COUNT}, (_, index) => (
-                <span key={index} className={`transition-all duration-150 ${index === activeLineIndex ? "text-primary" : ""}`}>
+                <span key={index} className={clsx("transition-all duration-150", index === activeLineIndex && "text-primary")}>
                 {index === activeLineIndex ? activeLineIndex + 1 : Math.abs(index - activeLineIndex)}
               </span>
               ))}
@@ -217,7 +217,7 @@ const App = () => {
                   <><CodeBlock.ConsoleToken>console</CodeBlock.ConsoleToken><CodeBlock.Punctuation>.</CodeBlock.Punctuation>log(<CodeBlock.Variable>age</CodeBlock.Variable>);</>,
                 ].map((line, i) => (
                   <p key={i} className="relative">
-                    <span className={`absolute left-0 top-0 w-1.25 h-2.5 bg-iris-400 transition-opacity duration-150 ${i + 1 === vimActiveLine ? "opacity-25" : "opacity-0"}`} />
+                    <span className={clsx("absolute left-0 top-0 w-1.25 h-2.5 bg-iris-400 transition-opacity duration-150", i + 1 === vimActiveLine ? "opacity-25" : "opacity-0")} />
                     {line}
                   </p>
                 ))}
@@ -249,7 +249,7 @@ const App = () => {
                 ) : (
                   /* Display full HTML structure at once after typing line is gone */
                   EMMET_LINES.map((line, i) => (
-                    <p key={i} className={line.indent === 1 ? "pl-3" : line.indent === 2 ? "pl-6" : ""}>
+                    <p key={i} className={clsx(line.indent === 1 && "pl-3", line.indent === 2 && "pl-6")}>
                       {line.text}
                     </p>
                   ))

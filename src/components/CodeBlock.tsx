@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import {clsx} from "clsx";
 
 interface CodeBlockProps {children: ReactNode, className?: string}
 interface CodeBlockGutterProps {lines: number[], activeLine?: number, className?: string}
@@ -7,7 +8,7 @@ interface TokenProps {children: ReactNode}
 
 const CodeBlock = ({children, className}: CodeBlockProps) => {
   return (
-    <div className={`w-full h-full pl-2 flex gap-1 text-3xs ${className ?? ""}`}>
+    <div className={clsx("w-full h-full pl-2 flex gap-1 text-3xs", className)}>
       {children}
     </div>
   )
@@ -16,9 +17,7 @@ export default CodeBlock;
 
 CodeBlock.Gutter = function CodeBlockGutter({lines, activeLine, className}: CodeBlockGutterProps) {
   return (
-    <div
-      className={`flex flex-col gap-1 text-center whitespace-nowrap shrink-0 ${className ?? ""}`}
-    >
+    <div className={clsx("flex flex-col gap-1 text-center whitespace-nowrap shrink-0", className)}>
       {lines.map((lineNimber, index) => (
         <span
           key={index}
@@ -33,9 +32,7 @@ CodeBlock.Gutter = function CodeBlockGutter({lines, activeLine, className}: Code
 
 CodeBlock.Code = function CodeBlockCode({ children, className }: CodeBlockCodeProps) {
   return (
-    <div
-      className={`flex flex-col gap-1 justify-start items-start font-normal ${className ?? ""}`}
-    >
+    <div className={clsx("flex flex-col gap-1 justify-start items-start font-normal", className)}>
       {children}
     </div>
   );
