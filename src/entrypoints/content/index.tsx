@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
+import App from "@/entrypoints/content/App";
 import PreferencesProvider from "@/context/preferences/PreferencesProvider.tsx";
 import '@/assets/index.css';
 

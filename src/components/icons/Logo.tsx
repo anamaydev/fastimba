@@ -4,13 +4,11 @@ interface LogoNewProps {
 const Logo = ({className}: LogoNewProps) => {
   return (
     <svg
-      width="12"
-      height="16"
-      viewBox="0 0 12 16"
-      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
       className={className}
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <path fill="currentColor" d="M4 8h4v4H4v4H0V4h4zm8-4H4V0h8z"/>
+      <path fill="currentColor" d="M10 12h4v4h-4v4H6V8h4zm8-4h-8V4h8z"/>
     </svg>
   )
 };

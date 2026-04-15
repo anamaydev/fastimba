@@ -1,20 +1,31 @@
-import type {ReactNode} from "react";
+import {clsx} from "clsx";
 import {usePreferencesContext} from "@/context/preferences/usePreferencesContext.ts";
+import {useFeatureContext} from "@/context/feature/useFeatureContext.ts";
+import {Check, Uncheck} from "@/components/icons";
 
 interface ToggleButtonProps {
-  children?: ReactNode;
   className?: string;
   name: "vim" | "relativeLineNumbers" | "emmet";
-  leftOption?: string;
-  rightOption?: string;
 }
 
+interface ToggleButtonMarkProps {
+  toggleState: boolean;
+  mark: "check" | "uncheck" | "thumb";
+}
 
-const ToggleButton = ({className, name, leftOption="Off", rightOption="On"}: ToggleButtonProps) => {
+const ToggleButton = ({className, name}: ToggleButtonProps) => {
   const {preferences, handleTogglePreferences} = usePreferencesContext();
+  const {isExpanded} = useFeatureContext();
 
   return (
-    <label className={`relative w-full h-6 p-0.5 flex justify-between items-center rounded-toggle-track font-bold bg-surface-light-overlay cursor-pointer ${className}`}>
+    <label
+      className={clsx(
+        "w-6 h-3 p-0.5 rounded-full flex justify-between items-center cursor-pointer",
+        isExpanded ? "relative" : "absolute right-0",
+        preferences[name] ?  "bg-emerald-400" : "bg-ash-50/20",
+        className
+      )}
+    >
       <input
         type="checkbox"
         name={name}
@@ -23,10 +34,29 @@ const ToggleButton = ({className, name, leftOption="Off", rightOption="On"}: Tog
         className="sr-only"
       />
 
-      <span className={`relative z-20 text-center flex-1 ${preferences[name] ? "text-secondary" : "text-primary"}`}>{leftOption}</span>
-      <span className={`relative z-20 text-center flex-1 ${preferences[name] ? "text-primary" : "text-secondary"}`}>{rightOption}</span>
-      <span className={`absolute z-10 w-[calc(50%-2px)] h-[calc(100%-4px)] left-0.5 top-0.5 rounded-toggle-thumb bg-surface-deep transition-all duration-300 ease-in-out ${preferences[name] ? "left-1/2" : "left-0.5"}`}></span>
+      <ToggleButton.Mark mark="check" toggleState={preferences[name]} />
+      <ToggleButton.Mark mark="uncheck" toggleState={preferences[name]} />
+      <ToggleButton.Mark mark="thumb" toggleState={preferences[name]} />
     </label>
   )
 };
 export default ToggleButton;
+
+const ToggleButtonMark = ({toggleState, mark}: ToggleButtonMarkProps) => {
+  if (mark === "thumb")
+    return (
+      <span className={clsx(
+        "absolute z-10 size-2 rounded-full bg-black opacity-70 transition-all duration-300 ease-in",
+        toggleState ? "translate-x-3" : "translate-x-0"
+      )}/>
+    );
+  if (mark === "uncheck")
+    return (
+      <Uncheck className={toggleState ? "text-black size-2 delay-200 opacity-0" : "text-black size-2 opacity-70"} />
+    );
+  return (
+    <Check className={toggleState ? "text-black size-2 opacity-70" : "text-black size-2 delay-200 opacity-0"} />
+  );
+};
+
+ToggleButton.Mark = ToggleButtonMark;

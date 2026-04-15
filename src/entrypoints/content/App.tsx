@@ -1,9 +1,11 @@
 import {useState, useEffect} from "react";
 import Header from "@/components/Header.tsx";
-import FeatureCard from "@/components/FeatureCard.tsx";
 import CodeBlock from "@/components/CodeBlock.tsx";
 import ToggleButton from "@/components/ToggleButton.tsx";
 import {usePreferencesContext} from "@/context/preferences/usePreferencesContext.ts";
+import {clsx} from "clsx";
+import Feature from "@/components/Feature.tsx";
+import {Emmet, RelativeLines, Terminal} from "@/components/icons";
 
 const LINE_COUNT = 9;
 
@@ -162,119 +164,113 @@ const App = () => {
   }, [isOpen]);
 
   return (
-    <div className={`${isOpen ? "flex" : "hidden"} w-78 h-auto fixed z-10000 top-2 right-2 flex flex-col gap-1`}>
+    <div className={clsx(
+      "w-78 h-auto p-1 rounded-[0.625rem] fixed z-10000 top-6 right-16 flex-col gap-1 container-shadow backdrop-blur-sm bg-obsidian-400/80 text-ash-100",
+      isOpen ? "flex" : "hidden"
+    )}>
       <Header/>
 
-      {/* Relative Line Numbers */}
-      <FeatureCard className="">
-        <FeatureCard.Visual className="w-14">
-          <div className="w-full h-full flex flex-col justify-center items-center gap-1">
-            {Array.from({length: LINE_COUNT}, (_, index) => (
-              <span key={index} className={`transition-all duration-150 ${index === activeLineIndex ? "text-primary" : ""}`}>
+      <hr className="h-[0.5px] rounded-full text-white/10" />
+
+      {/* settings */}
+      <div className="flex flex-col gap-0">
+        <Feature>
+          <Feature.Visual className="w-14">
+            <div className="w-full h-full flex flex-col justify-center items-center gap-1">
+              {Array.from({length: LINE_COUNT}, (_, index) => (
+                <span key={index} className={`transition-all duration-150 ${index === activeLineIndex ? "text-primary" : ""}`}>
                 {index === activeLineIndex ? activeLineIndex + 1 : Math.abs(index - activeLineIndex)}
               </span>
-            ))}
-          </div>
-        </FeatureCard.Visual>
-
-        <FeatureCard.Context className="flex-1">
-          <FeatureCard.Context.Title>Line Numbers</FeatureCard.Context.Title>
-          <FeatureCard.Context.Description>
-            <p>
-              <strong className="text-primary">Relative</strong>{" "}
-              <span>Line Numbers shows</span>{" "}
-              <strong className="text-primary">distance from cursor</strong>
-              <span>. Great for quick movement and jumps.</span>
-            </p>
-          </FeatureCard.Context.Description>
-          <ToggleButton name="relativeLineNumbers" className="w-full" leftOption="Absolute" rightOption="Relative" />
-        </FeatureCard.Context>
-      </FeatureCard>
-
-      {/* Vim */}
-      <FeatureCard className="">
-        <FeatureCard.Visual className="flxe-1 w-full">
-          <CodeBlock className="flex-1 w-full">
-            <CodeBlock.Gutter
-              lines={Array.from({length: VIM_GUTTER_SIZE}, (_, i) => {
-                const pos = i + 1;
-                return pos === vimActiveLine ? vimActiveLine : Math.abs(pos - vimActiveLine);
-              })}
-              activeLine={vimActiveLine}
-            />
-            <CodeBlock.Code>
-              {[
-                <><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>name</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>'John'</CodeBlock.String>;</>,
-                <><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>age</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>23</CodeBlock.String>;</>,
-                <><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>course</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>'React'</CodeBlock.String>;</>,
-                <>&nbsp;</>,
-                <><CodeBlock.ConsoleToken>console</CodeBlock.ConsoleToken><CodeBlock.Punctuation>.</CodeBlock.Punctuation>log(<CodeBlock.Variable>name</CodeBlock.Variable>);</>,
-                <><CodeBlock.ConsoleToken>console</CodeBlock.ConsoleToken><CodeBlock.Punctuation>.</CodeBlock.Punctuation>log(<CodeBlock.Variable>age</CodeBlock.Variable>);</>,
-              ].map((line, i) => (
-                <p key={i} className="relative">
-                  <span className={`absolute left-0 top-0 w-1.25 h-2.5 bg-primary transition-opacity duration-150 ${i + 1 === vimActiveLine ? "opacity-25" : "opacity-0"}`} />
-                  {line}
-                </p>
               ))}
-            </CodeBlock.Code>
-          </CodeBlock>
-          <FeatureCard.Badge>{vimBadge}</FeatureCard.Badge>
-        </FeatureCard.Visual>
+            </div>
+          </Feature.Visual>
 
-        <FeatureCard.Context className="flex-1">
-          <FeatureCard.Context.Title>Vim</FeatureCard.Context.Title>
-          <FeatureCard.Context.Description>
-            <p>
-              <strong className="text-primary">Vim </strong>
-              <span>keybindings for faster editing, </span>
-              <strong className="text-primary">avoid </strong>
-              <span>the </span>
-              <strong className="text-primary">mouse</strong>
-              <span>.</span>
-            </p>
-          </FeatureCard.Context.Description>
-          <ToggleButton name="vim"/>
-        </FeatureCard.Context>
-      </FeatureCard>
+          <Feature.Context>
+            <Feature.Context.Toggle>
+              <RelativeLines className="size-4 text-sapphire-300"/>
+            </Feature.Context.Toggle>
+            <Feature.Context.Title>Line Numbers</Feature.Context.Title>
+            <Feature.Context.Description>
+              <p className="text-center">Relative Line Numbers shows distance from cursor. Great for quick movement and jumps.</p>
+            </Feature.Context.Description>
+            <ToggleButton name="relativeLineNumbers"/>
+          </Feature.Context>
+        </Feature>
 
-      {/* Emmet */}
-      <FeatureCard className="">
-        <FeatureCard.Visual className="flxe-1 w-full">
-          <CodeBlock className="flex-1 w-full">
-            <CodeBlock.Gutter lines={[1, 1, 2, 3, 4, 5]} activeLine={1} />
-            <CodeBlock.Code className="text-syntax-tag">
-              {emmetRevealedLines === 0 ? (
-                /* Mirror the badge text on line 1, as if the user is typing there */
-                <p className="text-bright">{emmetBadge}</p>
-              ) : (
-                /* Display full HTML structure at once after typing line is gone */
-                EMMET_LINES.map((line, i) => (
-                  <p key={i} className={line.indent === 1 ? "pl-3" : line.indent === 2 ? "pl-6" : ""}>
-                    {line.text}
+        <Feature>
+          <Feature.Visual className="flxe-1 w-full">
+            <CodeBlock className="flex-1 w-full">
+              <CodeBlock.Gutter
+                lines={Array.from({length: VIM_GUTTER_SIZE}, (_, i) => {
+                  const pos = i + 1;
+                  return pos === vimActiveLine ? vimActiveLine : Math.abs(pos - vimActiveLine);
+                })}
+                activeLine={vimActiveLine}
+              />
+              <CodeBlock.Code>
+                {[
+                  <><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>name</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>'John'</CodeBlock.String>;</>,
+                  <><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>age</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>23</CodeBlock.String>;</>,
+                  <><CodeBlock.Keyword>const</CodeBlock.Keyword> <CodeBlock.Variable>course</CodeBlock.Variable> <CodeBlock.Keyword>=</CodeBlock.Keyword> <CodeBlock.String>'React'</CodeBlock.String>;</>,
+                  <>&nbsp;</>,
+                  <><CodeBlock.ConsoleToken>console</CodeBlock.ConsoleToken><CodeBlock.Punctuation>.</CodeBlock.Punctuation>log(<CodeBlock.Variable>name</CodeBlock.Variable>);</>,
+                  <><CodeBlock.ConsoleToken>console</CodeBlock.ConsoleToken><CodeBlock.Punctuation>.</CodeBlock.Punctuation>log(<CodeBlock.Variable>age</CodeBlock.Variable>);</>,
+                ].map((line, i) => (
+                  <p key={i} className="relative">
+                    <span className={`absolute left-0 top-0 w-1.25 h-2.5 bg-iris-400 transition-opacity duration-150 ${i + 1 === vimActiveLine ? "opacity-25" : "opacity-0"}`} />
+                    {line}
                   </p>
-                ))
-              )}
-            </CodeBlock.Code>
-          </CodeBlock>
-          <FeatureCard.Badge>{emmetBadge}</FeatureCard.Badge>
-        </FeatureCard.Visual>
+                ))}
+              </CodeBlock.Code>
+            </CodeBlock>
+            <Feature.Badge>{vimBadge}</Feature.Badge>
+          </Feature.Visual>
 
-        <FeatureCard.Context className="flex-1">
-          <FeatureCard.Context.Title>Emmet</FeatureCard.Context.Title>
-          <FeatureCard.Context.Description>
-            <p>
-              <span>Turn short expressions into </span>
-              <span className="text-primary">HTML</span>
-              <span> and </span>
-              <span className="text-primary">CSS</span>
-              <span> using </span>
-              <strong className="text-primary">Emmet </strong>
-              <span>syntax</span>.
-            </p>
-          </FeatureCard.Context.Description>
-          <ToggleButton name="emmet" className="max-w-26" />
-        </FeatureCard.Context>
-      </FeatureCard>
+          <Feature.Context>
+            <Feature.Context.Toggle>
+              <Terminal className="size-4 text-sapphire-300"/>
+            </Feature.Context.Toggle>
+            <Feature.Context.Title>Vim</Feature.Context.Title>
+            <Feature.Context.Description>
+              <p className="text-center">Vim keybindings for faster editing, avoid the mouse.</p>
+            </Feature.Context.Description>
+            <ToggleButton name="vim"/>
+          </Feature.Context>
+        </Feature>
+
+        <Feature>
+          <Feature.Visual className="flxe-1 w-full">
+            <CodeBlock className="flex-1 w-full">
+              <CodeBlock.Gutter lines={[1, 1, 2, 3, 4, 5]} activeLine={1} />
+              <CodeBlock.Code className="text-syntax-tag">
+                {emmetRevealedLines === 0 ? (
+                  /* Mirror the badge text on line 1, as if the user is typing there */
+                  <p className="text-bright">{emmetBadge}</p>
+                ) : (
+                  /* Display full HTML structure at once after typing line is gone */
+                  EMMET_LINES.map((line, i) => (
+                    <p key={i} className={line.indent === 1 ? "pl-3" : line.indent === 2 ? "pl-6" : ""}>
+                      {line.text}
+                    </p>
+                  ))
+                )}
+              </CodeBlock.Code>
+            </CodeBlock>
+            <Feature.Badge>{emmetBadge}</Feature.Badge>
+          </Feature.Visual>
+
+          <Feature.Context>
+            <Feature.Context.Toggle>
+              <Emmet className="size-4 text-sapphire-300"/>
+            </Feature.Context.Toggle>
+            <Feature.Context.Title>Emmet</Feature.Context.Title>
+            <Feature.Context.Description>
+              <p className="text-center">Turn short expressions into HTML and CSS using Emmet syntax.</p>
+            </Feature.Context.Description>
+            <ToggleButton name="emmet"/>
+          </Feature.Context>
+        </Feature>
+      </div>
     </div>
   )
 };
