@@ -165,7 +165,7 @@ const App = () => {
 
   return (
     <div className={clsx(
-      "w-78 h-auto p-1 rounded-[0.625rem] fixed z-10000 top-6 right-16 flex-col gap-1 container-shadow backdrop-blur-sm bg-obsidian-400/80 text-ash-100",
+      "w-78 h-auto p-1 rounded-[0.625rem] fixed z-10000 top-4 right-4 flex-col gap-1 container-shadow backdrop-blur-sm bg-obsidian-400/80 text-ash-100",
       isOpen ? "flex" : "hidden"
     )}>
       <Header/>

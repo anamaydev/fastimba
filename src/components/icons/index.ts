@@ -5,3 +5,5 @@ export {default as Terminal} from './Terminal';
 export {default as Check} from './Check';
 export {default as Uncheck} from './Uncheck';
 export {default as Warning} from './Warning';
+export {default as Github} from './Github';
+export {default as Chain} from './Chain';

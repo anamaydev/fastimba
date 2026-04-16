@@ -6,6 +6,8 @@
   
   /* Custom colors */
   --color-obsidian-400: lch(9.2 3.1 267.3);
+  --color-slate-500: lch(19.12 3.38 251.97);
+  --color-slate-400: lch(27.38 3.52 263.37);
   --color-iris-400: lch(47.87 5.19 285.84);
   --color-sapphire-300: lch(66.3 12.9 260.8);
   --color-ash-100: lch(86.7 0 0 / 1);
