@@ -1,9 +1,9 @@
 import {createContext} from 'react';
-import type {Dispatch, SetStateAction} from "react";
 
 interface FeatureContextProps {
-  isExpanded: boolean;
-  setIsExpanded:  Dispatch<SetStateAction<boolean>>
+  expandedFeatures: Set<string>;
+  toggleExpandedFeatures: (key:string) => void;
+  isExpanded: (key: string) => boolean;
 }
 
 export const FeatureContext = createContext<FeatureContextProps | undefined>(undefined);

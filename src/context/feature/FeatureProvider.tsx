@@ -6,9 +6,21 @@ interface FeatureProviderProps {
 }
 
 const FeatureProvider = ({children}:FeatureProviderProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set());
+
+  /* add or remove the expanded feature */
+  const toggleExpandedFeatures = (key: string) => {
+    setExpandedFeatures(prevExpandedFeatures => {
+      const tempExpandedFeatures = new Set(prevExpandedFeatures);
+      tempExpandedFeatures.has(key) ? tempExpandedFeatures.delete(key) : tempExpandedFeatures.add(key)
+      return tempExpandedFeatures;
+    })
+  }
+
+  const isExpanded = (key: string) => expandedFeatures.has(key);
+
   return (
-    <FeatureContext.Provider value={{isExpanded, setIsExpanded}}>
+    <FeatureContext.Provider value={{isExpanded, expandedFeatures, toggleExpandedFeatures}}>
       {children}
     </FeatureContext.Provider>
   )

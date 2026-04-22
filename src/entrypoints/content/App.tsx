@@ -174,7 +174,7 @@ const App = () => {
 
       {/* settings */}
       <div className="flex flex-col gap-0">
-        <Feature>
+        <Feature featureKey="lineNumbers">
           <Feature.Visual className="w-14">
             <div className="w-full h-full flex flex-col justify-center items-center gap-1">
               {Array.from({length: LINE_COUNT}, (_, index) => (
@@ -185,19 +185,20 @@ const App = () => {
             </div>
           </Feature.Visual>
 
-          <Feature.Context>
-            <Feature.Context.Toggle>
-              <RelativeLines className="size-4 text-sapphire-300"/>
-            </Feature.Context.Toggle>
-            <Feature.Context.Title>Line Numbers</Feature.Context.Title>
-            <Feature.Context.Description>
-              <p className="text-center">Relative Line Numbers shows distance from cursor. Great for quick movement and jumps.</p>
-            </Feature.Context.Description>
+          <Feature.Content>
+            <Feature.Header>
+              <Feature.Icon>
+                <RelativeLines className="size-4 text-sapphire-300"/>
+              </Feature.Icon>
+              <Feature.Title>Line Numbers</Feature.Title>
+            </Feature.Header>
+            <Feature.Toggle/>
+            <Feature.Description>Relative Line Numbers shows distance from cursor. Great for quick movement and jumps.</Feature.Description>
             <ToggleButton name="relativeLineNumbers"/>
-          </Feature.Context>
+          </Feature.Content>
         </Feature>
 
-        <Feature>
+        <Feature featureKey="vim">
           <Feature.Visual className="flxe-1 w-full">
             <CodeBlock className="flex-1 w-full">
               <CodeBlock.Gutter
@@ -226,19 +227,20 @@ const App = () => {
             <Feature.Badge>{vimBadge}</Feature.Badge>
           </Feature.Visual>
 
-          <Feature.Context>
-            <Feature.Context.Toggle>
-              <Terminal className="size-4 text-sapphire-300"/>
-            </Feature.Context.Toggle>
-            <Feature.Context.Title>Vim</Feature.Context.Title>
-            <Feature.Context.Description>
-              <p className="text-center">Vim keybindings for faster editing, avoid the mouse.</p>
-            </Feature.Context.Description>
+          <Feature.Content>
+            <Feature.Header>
+              <Feature.Icon>
+                <Terminal className="size-4 text-sapphire-300"/>
+              </Feature.Icon>
+              <Feature.Title>Vim</Feature.Title>
+            </Feature.Header>
+            <Feature.Toggle/>
+            <Feature.Description  className="text-center">Vim keybindings for faster editing, avoid the mouse.</Feature.Description>
             <ToggleButton name="vim"/>
-          </Feature.Context>
+          </Feature.Content>
         </Feature>
 
-        <Feature>
+        <Feature featureKey="emmet">
           <Feature.Visual className="flxe-1 w-full">
             <CodeBlock className="flex-1 w-full">
               <CodeBlock.Gutter lines={[1, 1, 2, 3, 4, 5]} activeLine={1} />
@@ -259,16 +261,17 @@ const App = () => {
             <Feature.Badge>{emmetBadge}</Feature.Badge>
           </Feature.Visual>
 
-          <Feature.Context>
-            <Feature.Context.Toggle>
-              <Emmet className="size-4 text-sapphire-300"/>
-            </Feature.Context.Toggle>
-            <Feature.Context.Title>Emmet</Feature.Context.Title>
-            <Feature.Context.Description>
-              <p className="text-center">Turn short expressions into HTML and CSS using Emmet syntax.</p>
-            </Feature.Context.Description>
+          <Feature.Content>
+            <Feature.Header>
+              <Feature.Icon>
+                <Emmet className="size-4 text-sapphire-300"/>
+              </Feature.Icon>
+              <Feature.Title>Emmet</Feature.Title>
+            </Feature.Header>
+            <Feature.Toggle/>
+            <Feature.Description>Turn short expressions into HTML and CSS using Emmet syntax.</Feature.Description>
             <ToggleButton name="emmet"/>
-          </Feature.Context>
+          </Feature.Content>
         </Feature>
       </div>
     </div>
