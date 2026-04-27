@@ -1,11 +1,12 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {clsx} from "clsx";
 import FeatureProvider from "@/context/feature/FeatureProvider.tsx";
 import Header from "@/components/Header.tsx";
 import CodeBlock from "@/components/CodeBlock.tsx";
 import ToggleButton from "@/components/ToggleButton.tsx";
 import Feature from "@/components/Feature.tsx";
-import {Emmet, RelativeLines, Terminal} from "@/components/icons";
+import Button from "@/components/Button.tsx";
+import {Emmet, RelativeLines, Terminal, Timer, Play, Restart} from "@/components/icons";
 
 import {usePreferencesContext} from "@/context/preferences/usePreferencesContext.ts";
 
@@ -65,6 +66,9 @@ const App = () => {
   const [vimActiveLine, setVimActiveLine] = useState(3);
   const [emmetBadge, setEmmetBadge] = useState("");
   const [emmetRevealedLines, setEmmetRevealedLines] = useState(0);
+
+  const playButtonContainerRef = useRef<HTMLDivElement | null>(null);
+  const restartButtonContainerRef = useRef<HTMLDivElement | null>(null);
 
   /* Vim Animation */
   useEffect(() => {
@@ -281,6 +285,32 @@ const App = () => {
             </Feature.Content>
           </Feature>
         </FeatureProvider>
+
+        <hr className="my-1 h-[0.5px] rounded-full text-white/10" />
+
+        {/* Pomodoro */}
+        <div className="p-1 rounded-lg flex justify-between items-center">
+          {/* Header */}
+          <div className="flex items-center gap-1.5">
+            <span className="size-4 flex justify-center items-center shrink-0">
+              <Timer className="size-4 text-sapphire-300"/>
+            </span>
+            <p className="font-bold text-bright"><strong>Pomodoro</strong></p>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-center items-center gap-1.5">
+            <Button buttonWidth={20} buttonHeight={20} ref={playButtonContainerRef}>
+              <Play className="size-4" />
+            </Button>
+            <Button buttonWidth={20} buttonHeight={20} ref={restartButtonContainerRef}>
+              <Restart className="size-4" />
+            </Button>
+          </div>
+
+          {/* Clock */}
+
+        </div>
       </div>
     </div>
   )

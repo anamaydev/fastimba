@@ -7,3 +7,7 @@ export {default as Uncheck} from './Uncheck';
 export {default as Warning} from './Warning';
 export {default as Github} from './Github';
 export {default as Chain} from './Chain';
+export {default as Timer} from './Timer';
+export {default as TimerSettings} from './TimerSettings';
+export {default as Play} from './Play';
+export {default as Restart} from './Restart';
