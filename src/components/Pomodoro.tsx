@@ -227,13 +227,13 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
 
       {/* Buttons */}
       <div className="flex justify-center items-center gap-1.5">
-        <Button buttonWidth={20} buttonHeight={20} ref={playButtonContainerRef}>
+        <Button ref={playButtonContainerRef}>
           {isRunning ? <Pause className="size-4" /> : <Play className="size-4" />}
         </Button>
-        <Button buttonWidth={20} buttonHeight={20} ref={restartButtonContainerRef}>
+        <Button ref={restartButtonContainerRef}>
           <Restart className="size-4" />
         </Button>
-        <Button buttonWidth={20} buttonHeight={20} ref={timerSettingsButtonContainerRef}>
+        <Button ref={timerSettingsButtonContainerRef}>
           <TimerSettings className="size-4" />
         </Button>
       </div>
@@ -333,15 +333,15 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
         <div className="flex justify-end items-center gap-1">
           {showResetWarning ? (
             <>
-              <Button buttonWidth={50} buttonHeight={18} onClick={handleCancelReset}>
+              <Button onClick={handleCancelReset} buttonClassName="bg-garnet-800 text-garnet-300" strokeClassName="stroke-garnet-600">
                 <span className="text-3xs">Cancel</span>
               </Button>
-              <Button buttonWidth={50} buttonHeight={18} onClick={handleConfirmReset}>
+              <Button onClick={handleConfirmReset} buttonClassName="bg-jade-800 text-jade-300" strokeClassName="stroke-jade-600">
                 <span className="text-3xs">Confirm</span>
               </Button>
             </>
           ) : (
-            <Button buttonWidth={50} buttonHeight={18} onClick={handleUpdate}>
+            <Button onClick={handleUpdate}>
               <span className="text-3xs">Update</span>
             </Button>
           )}

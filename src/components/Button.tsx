@@ -1,16 +1,13 @@
-import {useEffect, useRef, forwardRef} from "react";
+import {useEffect, useRef, useState, forwardRef} from "react";
 import type {ComponentPropsWithRef, ReactNode} from "react";
 import {clsx} from "clsx";
 import {useMergeRef} from "@/hooks/useMergeRefs";
 
 interface ButtonProps extends ComponentPropsWithRef<"div"> {
   children: ReactNode;
-  buttonWidth: number;
-  buttonHeight: number;
   className?: string;
-  strokeColor?: string;
-  textColor?: string;
-  backgroundColor?: string;
+  buttonClassName?: string;
+  strokeClassName?: string;
   onClick?: () => void;
 }
 
@@ -19,14 +16,10 @@ const SVG_SIZE_DELTA = 4;
 /* Rect is slightly smaller than the SVG to leave room for the stroke */
 const RECT_SIZE_DELTA = 3;
 
-/* Default colors for SVG rect*/
-const DEFAULT_STROKE_COLOR = "lch(35.9905 32.7 271.44)";
-const DEFAULT_TEXT_COLOR = "lch(75 65.4 271.44 / 1)"
-const DEFAULT_BACKGROUND_COLOR = "lch(20 14 271.44 / 1)"
-
 const Button = forwardRef<HTMLDivElement, ButtonProps>(
-  ({children, buttonWidth, buttonHeight, className, strokeColor, textColor, backgroundColor, onClick, ...rest}, forwardedRef) => {
+  ({children, className, buttonClassName, strokeClassName, onClick, ...rest}, forwardedRef) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const clockwiseRectRef = useRef<SVGRectElement | null>(null);
     const antiClockwiseRectRef = useRef<SVGRectElement | null>(null);
@@ -34,17 +27,37 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
     /* Merge internal ref with any forwarded ref from the parent */
     const mergedRef = useMergeRef(containerRef, forwardedRef);
 
+    /* Measured button dimensions drive SVG geometry */
+    const [dimensions, setDimensions] = useState({width: 0, height: 0});
+
     /* SVG must be bigger than the button so the stroke isn't clipped */
     const svgSize = {
-      width: buttonWidth + SVG_SIZE_DELTA,
-      height: buttonHeight + SVG_SIZE_DELTA
+      width: dimensions.width + SVG_SIZE_DELTA,
+      height: dimensions.height + SVG_SIZE_DELTA
     }
 
     /* Rect sits 0.5px inset from the SVG edge so the stroke isn't clipped */
     const rectSize = {
-      width: buttonWidth + RECT_SIZE_DELTA,
-      height: buttonHeight + RECT_SIZE_DELTA
+      width: dimensions.width + RECT_SIZE_DELTA,
+      height: dimensions.height + RECT_SIZE_DELTA
     }
+
+    /* Measure the button after mount and on resize */
+    useEffect(() => {
+      const buttonEl = buttonRef.current;
+      if (!buttonEl) return;
+
+      const measure = () => {
+        const {width, height} = buttonEl.getBoundingClientRect();
+        setDimensions(prev => (prev.width === width && prev.height === height) ? prev : {width, height});
+      };
+
+      measure();
+
+      const observer = new ResizeObserver(measure);
+      observer.observe(buttonEl);
+      return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
       const clockwiseRectEl = clockwiseRectRef.current;
@@ -130,21 +143,20 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
         )}
         {...rest}
       >
-        {/* Actual clickable button, centered over the SVG via absolute inset */}
+        {/* Button is in normal flow so it defines the container size */}
         <button
-          className="absolute inset-0 m-auto rounded-sm flex justify-center items-center gap-1.5 cursor-pointer"
-          style={{
-            width: buttonWidth,
-            height: buttonHeight,
-            backgroundColor: backgroundColor ?? DEFAULT_BACKGROUND_COLOR,
-            color: textColor ?? DEFAULT_TEXT_COLOR
-          }}
+          ref={buttonRef}
+          className={clsx(
+            "relative p-0.5 m-0.5 rounded-sm flex justify-center items-center gap-1.5 cursor-pointer",
+            buttonClassName ?? "bg-cobalt-800 text-cobalt-300"
+          )}
           onClick={onClick}
         >{children}</button>
 
-        {/* SVG ring that wraps the button; sized larger so the stroke isn't clipped */}
+        {/* SVG ring overlays the button; sized larger so the stroke isn't clipped */}
         <svg
           ref={svgRef}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
           width={svgSize.width}
           height={svgSize.height}
           viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
@@ -152,6 +164,7 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
           {/* pathLength={100} lets us treat dasharray values as percentages of the perimeter */}
           <rect
             ref={clockwiseRectRef}
+            className={clsx(strokeClassName ?? "stroke-cobalt-600")}
             width={rectSize.width}
             height={rectSize.height}
             x={0.5}
@@ -159,7 +172,6 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
             rx={5.5}
             ry={5.5}
             strokeWidth={1}
-            stroke={strokeColor ?? DEFAULT_STROKE_COLOR}
             strokeOpacity={0.7}
             fill={"transparent"}
             pathLength={100}
@@ -168,6 +180,7 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
           {/* Identical rect layered on top; stroke travels counter-clockwise from the same entry point */}
           <rect
             ref={antiClockwiseRectRef}
+            className={clsx(strokeClassName ?? "stroke-cobalt-600")}
             width={rectSize.width}
             height={rectSize.height}
             x={0.5}
@@ -175,7 +188,6 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
             rx={5.5}
             ry={5.5}
             strokeWidth={1}
-            stroke={strokeColor ?? DEFAULT_STROKE_COLOR}
             strokeOpacity={0.7}
             fill={"transparent"}
             pathLength={100}
@@ -185,7 +197,7 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
           {/* border */}
           {/* TODO: Create button variants */}
           <rect
-            className="hidden"
+            className={clsx("hidden", strokeClassName ?? "stroke-cobalt-600")}
             width={rectSize.width}
             height={rectSize.height}
             x={0.5}
@@ -193,7 +205,6 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
             rx={5.5}
             ry={5.5}
             strokeWidth={1}
-            stroke={strokeColor ?? DEFAULT_STROKE_COLOR}
             strokeOpacity={0.1}
             fill={"transparent"}
             pathLength={100}

@@ -51,7 +51,7 @@ CodeBlock.String = function CodeBlockString({ children }: TokenProps) {
 }
 
 CodeBlock.ConsoleToken = function CodeBlockConsoleToken({ children }: TokenProps) {
-  return <span className="text-syntax-console">{children}</span>;
+  return <span className="text-syntax-tag">{children}</span>;
 }
 
 CodeBlock.Punctuation =  function CodeBlockPunctuation({ children }: TokenProps) {
