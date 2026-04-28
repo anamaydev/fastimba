@@ -25,6 +25,17 @@
   --color-syntax-punctuation: rgba(204, 204, 204, 0.45);
   --color-syntax-tag: rgba(250, 255, 178, 0.45);
   
+  
+  --color-button-red: lch(20 14 18.6 / 1);
+  --color-button-blue: lch(20 14 271.44 / 1);
+  --color-button-yellow: lch(20 14 83.1 / 1);
+  --color-button-green: lch(20 14 161.4 / 1);
+  
+  --color-button-text-red: lch(75 66.7 18.6 / 1);
+  --color-button-text-blue: lch(75 65.4 271.44 / 1);
+  --color-button-text-yellow: lch(75 82.3 83.1 / 1);
+  --color-button-text-green: lch(75 56.2 161.4 / 1);
+  
   /* Custom font sizes */
   --text-2xs: 0.625rem;
   --text-3xs: 0.5rem;
