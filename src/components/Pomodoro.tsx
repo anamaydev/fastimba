@@ -1,6 +1,6 @@
 import {type RefObject, type ChangeEvent, useState, useEffect, useCallback, useRef} from "react";
 import Button from "@/components/Button.tsx";
-import {Timer, Play, Pause, Restart, TimerSettings} from "@/components/icons";
+import {Timer, Play, Pause, Restart, TimerSettings, Warning} from "@/components/icons";
 
 type Phase = "session" | "shortBreak" | "longBreak";
 
@@ -32,6 +32,12 @@ const CLOCK_RADIUS = 7;
 const CLOCK_STROKE = 2;
 /* Perimeter of the rounded rect: 2*(w - 2r) + 2*(h - 2r) + 2πr */
 const CLOCK_PERIMETER = 2 * (CLOCK_WIDTH - 2 * CLOCK_RADIUS) + 2 * (CLOCK_HEIGHT - 2 * CLOCK_RADIUS) + 2 * Math.PI * CLOCK_RADIUS;
+
+const PHASE_COLORS: Record<Phase, {stroke: string; track: string}> = {
+  session: {stroke: "stroke-cobalt-300", track: "stroke-cobalt-300/10"},
+  shortBreak: {stroke: "stroke-jade-300", track: "stroke-jade-300/10"},
+  longBreak: {stroke: "stroke-amber-300", track: "stroke-amber-300/10"},
+};
 
 const toMinStr = (seconds: number) => String(Math.round(seconds / 60));
 
@@ -256,7 +262,7 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
             height={CLOCK_HEIGHT - CLOCK_STROKE}
             rx={CLOCK_RADIUS}
             ry={CLOCK_RADIUS}
-            stroke="rgba(105,188,255,0.2)"
+            className={PHASE_COLORS[phase].track}
             strokeWidth={CLOCK_STROKE}
           />
           {/* Animated progress: dashoffset shrinks from full perimeter to 0 */}
@@ -267,12 +273,11 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
             height={CLOCK_HEIGHT - CLOCK_STROKE}
             rx={CLOCK_RADIUS}
             ry={CLOCK_RADIUS}
-            stroke="rgb(105,188,255)"
+            className={`${PHASE_COLORS[phase].stroke} transition-[stroke-dashoffset] duration-1000 ease-linear`}
             strokeWidth={CLOCK_STROKE}
             strokeDasharray={CLOCK_PERIMETER}
             strokeDashoffset={CLOCK_PERIMETER * (1 - progress)}
             strokeLinecap="round"
-            className="transition-[stroke-dashoffset] duration-1000 ease-linear"
           />
         </svg>
 
@@ -307,42 +312,46 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
 
     {/* Settings panel */}
     {showSettings && (
-      <div className="px-2 py-1.5 rounded-lg flex flex-col gap-1.5 bg-iris-400/20">
+      <div className="px-2 py-1.5 rounded-lg flex flex-col gap-1.5">
         {(["session", "shortBreak", "longBreak"] as Phase[]).map(key => (
           <label key={key} className="flex justify-between items-center gap-2">
-            <span className="text-2xs text-secondary">{PHASE_LABELS[key]}</span>
+            <span className="text-2xs text-bright font-medium">{PHASE_LABELS[key]}</span>
             <div className="flex items-center gap-1">
               <input
+                id={`${key}`}
                 type="text"
                 inputMode="numeric"
                 min={PHASE_LIMITS[key].min}
                 max={PHASE_LIMITS[key].max}
                 value={draftInputs[key]}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => handleDraftChange(key, e.target.value)}
-                className="w-8 bg-ash-50/20 text-bright text-2xs text-center rounded px-1 py-0.5 outline-none"
+                className="w-8 text-sm font-black text-white tabular-nums text-center rounded outline-none bg-slate-500"
               />
-              <span className="text-3xs text-light">min</span>
+              <span className="text-3xs text-slate-400">min</span>
             </div>
           </label>
         ))}
 
         {showResetWarning && (
-          <p className="text-3xs text-secondary/80 text-center">Updating will reset your current session</p>
+          <div className="flex justify-center items-center gap-1.5">
+            <Warning className="size-4 text-garnet-300"/>
+            <p className="text-2xs text-garnet-600 text-center">Updating will reset your current session</p>
+          </div>
         )}
 
         <div className="flex justify-end items-center gap-1">
           {showResetWarning ? (
             <>
-              <Button onClick={handleCancelReset} buttonClassName="bg-garnet-800 text-garnet-300" strokeClassName="stroke-garnet-600">
-                <span className="text-3xs">Cancel</span>
+              <Button onClick={handleCancelReset} buttonClassName="min-h-4 bg-garnet-800 text-garnet-300" strokeClassName="stroke-garnet-600">
+                <span className="text-2xs">Cancel</span>
               </Button>
-              <Button onClick={handleConfirmReset} buttonClassName="bg-jade-800 text-jade-300" strokeClassName="stroke-jade-600">
-                <span className="text-3xs">Confirm</span>
+              <Button onClick={handleConfirmReset} buttonClassName="min-h-4 bg-jade-800 text-jade-300" strokeClassName="stroke-jade-600">
+                <span className="text-2xs">Confirm</span>
               </Button>
             </>
           ) : (
-            <Button onClick={handleUpdate}>
-              <span className="text-3xs">Update</span>
+            <Button onClick={handleUpdate} buttonClassName="min-h-4 bg-cobalt-800 text-cobalt-300" strokeClassName="stroke-cobalt-600">
+              <span className="text-2xs">Update</span>
             </Button>
           )}
         </div>

@@ -2,7 +2,7 @@ import {ComponentPropsWithRef, forwardRef} from "react";
 import {clsx} from "clsx";
 import {useFeatureContext} from "@/context/feature/useFeatureContext.ts";
 import {useFeatureKeyContext} from "@/context/feature/useFeatureKeyContext.ts";
-import {Warning, Uncheck} from "@/components/icons";
+import {Information, Uncheck} from "@/components/icons";
 import FeatureKeyProvider from "@/context/feature/FeatureKeyProvider.tsx";
 
 interface FeatureProps extends ComponentPropsWithRef<"div"> {featureKey: string}
@@ -164,7 +164,7 @@ const FeatureToggle = forwardRef<HTMLButtonElement, FeatureToggleProps>(
         {
           isExpanded(featureKey) ?
             <Uncheck className="size-4 absolute inset-0 transition-all duration-200"/> :
-            <Warning className="size-4 absolute inset-0 transition-all duration-200"/>
+            <Information className="size-4 absolute inset-0 transition-all duration-200"/>
         }
       </button>
     )

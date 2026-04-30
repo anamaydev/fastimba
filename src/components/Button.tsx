@@ -138,7 +138,7 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
       <div
         ref={mergedRef}
         className={clsx(
-          "relative cursor-pointer",
+          "relative w-full h-full flex justify-center items-center cursor-pointer",
           className
         )}
         {...rest}
@@ -147,7 +147,8 @@ const Button = forwardRef<HTMLDivElement, ButtonProps>(
         <button
           ref={buttonRef}
           className={clsx(
-            "relative p-0.5 m-0.5 rounded-sm flex justify-center items-center gap-1.5 cursor-pointer",
+            // "relative p-0.5 m-0.5 rounded-sm flex justify-center items-center gap-1.5 cursor-pointer",
+            "relative w-full h-full p-0.5 m-0.5 rounded-sm flex justify-center items-center gap-1.5 cursor-pointer text-nowrap",
             buttonClassName ?? "bg-cobalt-800 text-cobalt-300"
           )}
           onClick={onClick}
