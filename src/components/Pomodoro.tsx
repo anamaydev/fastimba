@@ -37,9 +37,9 @@ const PHASE_COLORS: Record<Phase, {stroke: string; track: string}> = {
 const toMinStr = (seconds: number) => String(Math.round(seconds / 60));
 
 interface PomodoroProps {
-  playButtonContainerRef: RefObject<HTMLDivElement | null>;
-  restartButtonContainerRef: RefObject<HTMLDivElement | null>;
-  timerSettingsButtonContainerRef: RefObject<HTMLDivElement | null>;
+  playButtonContainerRef: RefObject<HTMLButtonElement | null>;
+  restartButtonContainerRef: RefObject<HTMLButtonElement | null>;
+  timerSettingsButtonContainerRef: RefObject<HTMLButtonElement | null>;
 }
 
 const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSettingsButtonContainerRef}: PomodoroProps) => {
@@ -343,15 +343,15 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
           <div className="flex justify-end items-center gap-1">
             {showResetWarning ? (
               <>
-                <Button onClick={handleCancelReset} buttonClassName="min-h-4 bg-garnet-800 text-garnet-300" strokeClassName="stroke-garnet-600">
+                <Button onClick={handleCancelReset} colorScheme="garnet">
                   <span className="text-2xs">Cancel</span>
                 </Button>
-                <Button onClick={handleConfirmReset} buttonClassName="min-h-4 bg-jade-800 text-jade-300" strokeClassName="stroke-jade-600">
+                <Button onClick={handleConfirmReset} colorScheme="jade">
                   <span className="text-2xs">Confirm</span>
                 </Button>
               </>
             ) : (
-              <Button onClick={handleUpdate} buttonClassName="min-h-4 bg-cobalt-800 text-cobalt-300" strokeClassName="stroke-cobalt-600">
+              <Button onClick={handleUpdate} colorScheme="cobalt">
                 <span className="text-2xs">Update</span>
               </Button>
             )}

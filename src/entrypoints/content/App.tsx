@@ -67,9 +67,9 @@ const App = () => {
   const [emmetBadge, setEmmetBadge] = useState("");
   const [emmetRevealedLines, setEmmetRevealedLines] = useState(0);
 
-  const pomodoroPlayRef = useRef<HTMLDivElement | null>(null);
-  const pomodoroRestartRef = useRef<HTMLDivElement | null>(null);
-  const pomodoroSettingsRef = useRef<HTMLDivElement | null>(null);
+  const pomodoroPlayRef = useRef<HTMLButtonElement | null>(null);
+  const pomodoroRestartRef = useRef<HTMLButtonElement | null>(null);
+  const pomodoroSettingsRef = useRef<HTMLButtonElement | null>(null);
 
   /* Vim Animation */
   useEffect(() => {

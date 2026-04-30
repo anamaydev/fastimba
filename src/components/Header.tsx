@@ -26,11 +26,11 @@ const Header = () => {
       </span>
 
       <div className="relative flex justify-center items-center gap-2">
-        <Button onClick={handleGithub} buttonClassName="bg-slate-500 text-sapphire-300" strokeClassName="stroke-iris-400">
+        <Button onClick={handleGithub} colorScheme="slate">
           <p>Github</p>
           <Github className="size-4"/>
         </Button>
-        <Button onClick={handleCopyLink} buttonClassName="bg-slate-500 text-sapphire-300" strokeClassName="stroke-iris-400">
+        <Button onClick={handleCopyLink} colorScheme="slate">
           <p>{copyLabel}</p>
           <Chain className="size-4"/>
         </Button>
