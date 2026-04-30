@@ -2,6 +2,7 @@ import {clsx} from "clsx";
 import {usePreferencesContext} from "@/context/preferences/usePreferencesContext.ts";
 import {useFeatureContext} from "@/context/feature/useFeatureContext.ts";
 import {Check, Uncheck} from "@/components/icons";
+import {useFeatureKeyContext} from "@/context/feature/useFeatureKeyContext.ts";
 
 interface ToggleButtonProps {
   className?: string;
@@ -15,13 +16,14 @@ interface ToggleButtonMarkProps {
 
 const ToggleButton = ({className, name}: ToggleButtonProps) => {
   const {preferences, handleTogglePreferences} = usePreferencesContext();
+  const {featureKey} = useFeatureKeyContext();
   const {isExpanded} = useFeatureContext();
 
   return (
     <label
       className={clsx(
         "w-6 h-3 p-0.5 rounded-full flex justify-between items-center cursor-pointer",
-        isExpanded ? "relative" : "absolute right-0",
+        isExpanded(featureKey) ? "relative" : "absolute right-0",
         preferences[name] ?  "bg-emerald-400" : "bg-ash-50/20",
         className
       )}

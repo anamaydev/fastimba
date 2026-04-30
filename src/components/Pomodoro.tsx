@@ -1,6 +1,7 @@
 import {type RefObject, type ChangeEvent, useState, useEffect, useCallback, useRef} from "react";
 import Button from "@/components/Button.tsx";
 import {Timer, Play, Pause, Restart, TimerSettings, Warning} from "@/components/icons";
+import {usePreferencesContext} from "@/context/preferences/usePreferencesContext";
 
 type Phase = "session" | "shortBreak" | "longBreak";
 
@@ -48,23 +49,26 @@ interface PomodoroProps {
 }
 
 const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSettingsButtonContainerRef}: PomodoroProps) => {
-  const [durations, setDurations] = useState(DEFAULT_DURATIONS);
+  const {preferences, setPreferences} = usePreferencesContext();
+  const savedDurations = preferences.pomodoroDurations ?? DEFAULT_DURATIONS;
+
+  const [durations, setDurations] = useState(savedDurations);
   const [phase, setPhase] = useState<Phase>("session");
   const [session, setSession] = useState(1); /* 1-based session counter */
-  const [remaining, setRemaining] = useState(DEFAULT_DURATIONS.session); /* seconds left */
+  const [remaining, setRemaining] = useState(savedDurations.session); /* seconds left */
   const [isRunning, setIsRunning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   /* Locked at phase start so settings edits mid-phase don't affect progress bar */
-  const activeDurationRef = useRef(DEFAULT_DURATIONS.session);
+  const activeDurationRef = useRef(savedDurations.session);
   /* Holds parsed durations between Update click and Confirm */
   const pendingDurationsRef = useRef<Record<Phase, number> | null>(null);
 
   /* String-based drafts so the input field can be emptied while typing */
   const [draftInputs, setDraftInputs] = useState<Record<Phase, string>>({
-    session: toMinStr(DEFAULT_DURATIONS.session),
-    shortBreak: toMinStr(DEFAULT_DURATIONS.shortBreak),
-    longBreak: toMinStr(DEFAULT_DURATIONS.longBreak),
+    session: toMinStr(savedDurations.session),
+    shortBreak: toMinStr(savedDurations.shortBreak),
+    longBreak: toMinStr(savedDurations.longBreak),
   });
 
   /* Countdown: tick every 1s while running */
@@ -163,35 +167,38 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
     return parsed;
   }, []);
 
-  /* Apply new durations: reset to session 1 and restart the session phase */
+  /* Apply new durations: reset to session 1, restart the session phase, persist to preferences */
   const applySettings = useCallback((newDurations: Record<Phase, number>) => {
     setDurations(newDurations);
     setSession(1);
     startPhase("session", newDurations);
     setShowResetWarning(false);
-  }, [startPhase]);
+    setPreferences(prev => ({...prev, pomodoroDurations: newDurations}));
+  }, [startPhase, setPreferences]);
 
-  /* If running: pause + show warning. If idle: apply immediately */
+  /* If running: show warning (timer keeps running). If idle: apply immediately */
   const handleUpdate = useCallback(() => {
     const newDurations = parseDrafts();
 
     if (isRunning) {
-      setIsRunning(false);
       setShowResetWarning(true);
       pendingDurationsRef.current = newDurations;
     } else {
       applySettings(newDurations);
+      setShowSettings(false);
     }
   }, [isRunning, parseDrafts, applySettings]);
 
   const handleConfirmReset = useCallback(() => {
     if (pendingDurationsRef.current) {
+      setIsRunning(false);
       applySettings(pendingDurationsRef.current);
       pendingDurationsRef.current = null;
+      setShowSettings(false);
     }
   }, [applySettings]);
 
-  /* Dismiss warning, timer stays paused for manual resume */
+  /* Dismiss warning, timer keeps running */
   const handleCancelReset = useCallback(() => {
     setShowResetWarning(false);
     pendingDurationsRef.current = null;

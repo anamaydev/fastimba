@@ -22,6 +22,7 @@ const PreferencesProvider = ({children}: PreferencesProviderProps) => {
         vim: false,
         relativeLineNumbers: false,
         emmet: false,
+        pomodoroDurations: {session: 25 * 60, shortBreak: 5 * 60, longBreak: 15 * 60},
       };
   });
 
