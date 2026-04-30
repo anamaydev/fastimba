@@ -11,7 +11,7 @@ export interface PreferencesTypes {
   vim: boolean,
   relativeLineNumbers: boolean,
   emmet: boolean,
-  pomodoroDurations?: PomodoroDurations,
+  pomodoroDurations: PomodoroDurations,
 }
 
 interface PreferencesContextProps {

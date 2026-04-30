@@ -11,12 +11,6 @@ const PHASE_LABELS: Record<Phase, string> = {
   longBreak: "Long Break",
 };
 
-const DEFAULT_DURATIONS: Record<Phase, number> = {
-  session: 25 * 60,
-  shortBreak: 5 * 60,
-  longBreak: 15 * 60,
-};
-
 const TOTAL_SESSIONS = 4;
 
 /* Per-phase min/max in minutes */
@@ -50,25 +44,25 @@ interface PomodoroProps {
 
 const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSettingsButtonContainerRef}: PomodoroProps) => {
   const {preferences, setPreferences} = usePreferencesContext();
-  const savedDurations = preferences.pomodoroDurations ?? DEFAULT_DURATIONS;
+  const {pomodoroDurations} = preferences;
 
-  const [durations, setDurations] = useState(savedDurations);
+  const [durations, setDurations] = useState(pomodoroDurations);
   const [phase, setPhase] = useState<Phase>("session");
   const [session, setSession] = useState(1); /* 1-based session counter */
-  const [remaining, setRemaining] = useState(savedDurations.session); /* seconds left */
+  const [remaining, setRemaining] = useState(pomodoroDurations.session); /* seconds left */
   const [isRunning, setIsRunning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   /* Locked at phase start so settings edits mid-phase don't affect progress bar */
-  const activeDurationRef = useRef(savedDurations.session);
+  const activeDurationRef = useRef(pomodoroDurations.session);
   /* Holds parsed durations between Update click and Confirm */
   const pendingDurationsRef = useRef<Record<Phase, number> | null>(null);
 
   /* String-based drafts so the input field can be emptied while typing */
   const [draftInputs, setDraftInputs] = useState<Record<Phase, string>>({
-    session: toMinStr(savedDurations.session),
-    shortBreak: toMinStr(savedDurations.shortBreak),
-    longBreak: toMinStr(savedDurations.longBreak),
+    session: toMinStr(pomodoroDurations.session),
+    shortBreak: toMinStr(pomodoroDurations.shortBreak),
+    longBreak: toMinStr(pomodoroDurations.longBreak),
   });
 
   /* Countdown: tick every 1s while running */
@@ -90,10 +84,10 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
 
   /* Single entry point for all phase transitions, keeps activeDuration, phase, remaining in sync */
   const startPhase = useCallback((nextPhase: Phase, nextDurations: Record<Phase, number>) => {
-    const dur = nextDurations[nextPhase];
-    activeDurationRef.current = dur;
+    const duration = nextDurations[nextPhase];
+    activeDurationRef.current = duration;
     setPhase(nextPhase);
-    setRemaining(dur);
+    setRemaining(duration);
   }, []);
 
   /* Auto-advance: session > short break > session (x4) > long break > stop */
@@ -229,141 +223,141 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
 
   return (
     <div className="flex flex-col gap-1">
-    <div className="p-1 rounded-lg flex justify-between items-center">
-      {/* Header */}
-      <div className="flex items-center gap-1.5">
-        <span className="size-4 flex justify-center items-center shrink-0">
-          <Timer className="size-4 text-sapphire-300"/>
-        </span>
-        <p className="font-bold text-bright"><strong>Pomodoro</strong></p>
-      </div>
-
-      {/* Buttons */}
-      <div className="flex justify-center items-center gap-1.5">
-        <Button ref={playButtonContainerRef}>
-          {isRunning ? <Pause className="size-4" /> : <Play className="size-4" />}
-        </Button>
-        <Button ref={restartButtonContainerRef}>
-          <Restart className="size-4" />
-        </Button>
-        <Button ref={timerSettingsButtonContainerRef}>
-          <TimerSettings className="size-4" />
-        </Button>
-      </div>
-
-      {/* Clock */}
-      <div className="relative flex justify-center items-center" style={{width: CLOCK_WIDTH, height: CLOCK_HEIGHT}}>
-        {/* SVG rings */}
-        <svg
-          className="absolute inset-0"
-          width={CLOCK_WIDTH}
-          height={CLOCK_HEIGHT}
-          viewBox={`0 0 ${CLOCK_WIDTH} ${CLOCK_HEIGHT}`}
-          fill="none"
-        >
-          {/* Static track */}
-          <rect
-            x={CLOCK_STROKE / 2}
-            y={CLOCK_STROKE / 2}
-            width={CLOCK_WIDTH - CLOCK_STROKE}
-            height={CLOCK_HEIGHT - CLOCK_STROKE}
-            rx={CLOCK_RADIUS}
-            ry={CLOCK_RADIUS}
-            className={PHASE_COLORS[phase].track}
-            strokeWidth={CLOCK_STROKE}
-          />
-          {/* Animated progress: dashoffset shrinks from full perimeter to 0 */}
-          <rect
-            x={CLOCK_STROKE / 2}
-            y={CLOCK_STROKE / 2}
-            width={CLOCK_WIDTH - CLOCK_STROKE}
-            height={CLOCK_HEIGHT - CLOCK_STROKE}
-            rx={CLOCK_RADIUS}
-            ry={CLOCK_RADIUS}
-            className={`${PHASE_COLORS[phase].stroke} transition-[stroke-dashoffset] duration-1000 ease-linear`}
-            strokeWidth={CLOCK_STROKE}
-            strokeDasharray={CLOCK_PERIMETER}
-            strokeDashoffset={CLOCK_PERIMETER * (1 - progress)}
-            strokeLinecap="round"
-          />
-        </svg>
-
-        {/* Phase label + time + session dots */}
-        <div className="relative flex flex-col items-center justify-between py-1.5">
-          {/* Phase label */}
-          <span className="text-white/40 leading-none" style={{fontSize: 6}}>{PHASE_LABELS[phase]}</span>
-
-          {/* MM:SS */}
-          <div className="flex items-end gap-0.5 leading-none">
-            <span className="text-sm font-black text-white tabular-nums">
-              {String(minutes).padStart(2, "0")}
-            </span>
-            <span className="text-sm font-black text-white/50">:</span>
-            <span className="text-sm font-black text-white tabular-nums">
-              {String(seconds).padStart(2, "0")}
-            </span>
-          </div>
-
-          {/* Session dots */}
-          <div className="flex items-center gap-0.5">
-            {Array.from({length: TOTAL_SESSIONS}, (_, i) => (
-              <span
-                key={i}
-                className={`size-1 rounded-sm ${i < session ? "bg-sapphire-300" : "bg-sapphire-300/20"}`}
-              />
-            ))}
-          </div>
+      <div className="p-1 rounded-lg flex justify-between items-center">
+        {/* Header */}
+        <div className="flex items-center gap-1.5">
+          <span className="size-4 flex justify-center items-center shrink-0">
+            <Timer className="size-4 text-sapphire-300"/>
+          </span>
+          <p className="font-bold text-bright"><strong>Pomodoro</strong></p>
         </div>
-      </div>
-    </div>
 
-    {/* Settings panel */}
-    {showSettings && (
-      <div className="px-2 py-1.5 rounded-lg flex flex-col gap-1.5">
-        {(["session", "shortBreak", "longBreak"] as Phase[]).map(key => (
-          <label key={key} className="flex justify-between items-center gap-2">
-            <span className="text-2xs text-bright font-medium">{PHASE_LABELS[key]}</span>
-            <div className="flex items-center gap-1">
-              <input
-                id={`${key}`}
-                type="text"
-                inputMode="numeric"
-                min={PHASE_LIMITS[key].min}
-                max={PHASE_LIMITS[key].max}
-                value={draftInputs[key]}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => handleDraftChange(key, e.target.value)}
-                className="w-8 text-sm font-black text-white tabular-nums text-center rounded outline-none bg-slate-500"
-              />
-              <span className="text-3xs text-slate-400">min</span>
+        {/* Buttons */}
+        <div className="flex justify-center items-center gap-1.5">
+          <Button ref={playButtonContainerRef}>
+            {isRunning ? <Pause className="size-4" /> : <Play className="size-4" />}
+          </Button>
+          <Button ref={restartButtonContainerRef}>
+            <Restart className="size-4" />
+          </Button>
+          <Button ref={timerSettingsButtonContainerRef}>
+            <TimerSettings className="size-4" />
+          </Button>
+        </div>
+
+        {/* Clock */}
+        <div className="relative flex justify-center items-center" style={{width: CLOCK_WIDTH, height: CLOCK_HEIGHT}}>
+          {/* SVG rings */}
+          <svg
+            className="absolute inset-0"
+            width={CLOCK_WIDTH}
+            height={CLOCK_HEIGHT}
+            viewBox={`0 0 ${CLOCK_WIDTH} ${CLOCK_HEIGHT}`}
+            fill="none"
+          >
+            {/* Static track */}
+            <rect
+              x={CLOCK_STROKE / 2}
+              y={CLOCK_STROKE / 2}
+              width={CLOCK_WIDTH - CLOCK_STROKE}
+              height={CLOCK_HEIGHT - CLOCK_STROKE}
+              rx={CLOCK_RADIUS}
+              ry={CLOCK_RADIUS}
+              className={PHASE_COLORS[phase].track}
+              strokeWidth={CLOCK_STROKE}
+            />
+            {/* Animated progress: dashoffset shrinks from full perimeter to 0 */}
+            <rect
+              x={CLOCK_STROKE / 2}
+              y={CLOCK_STROKE / 2}
+              width={CLOCK_WIDTH - CLOCK_STROKE}
+              height={CLOCK_HEIGHT - CLOCK_STROKE}
+              rx={CLOCK_RADIUS}
+              ry={CLOCK_RADIUS}
+              className={`${PHASE_COLORS[phase].stroke} transition-[stroke-dashoffset] duration-1000 ease-linear`}
+              strokeWidth={CLOCK_STROKE}
+              strokeDasharray={CLOCK_PERIMETER}
+              strokeDashoffset={CLOCK_PERIMETER * (1 - progress)}
+              strokeLinecap="round"
+            />
+          </svg>
+
+          {/* Phase label + time + session dots */}
+          <div className="relative flex flex-col items-center justify-between py-1.5">
+            {/* Phase label */}
+            <span className="text-white/40 leading-none" style={{fontSize: 6}}>{PHASE_LABELS[phase]}</span>
+
+            {/* MM:SS */}
+            <div className="flex items-end gap-0.5 leading-none">
+              <span className="text-sm font-black text-white tabular-nums">
+                {String(minutes).padStart(2, "0")}
+              </span>
+              <span className="text-sm font-black text-white/50">:</span>
+              <span className="text-sm font-black text-white tabular-nums">
+                {String(seconds).padStart(2, "0")}
+              </span>
             </div>
-          </label>
-        ))}
 
-        {showResetWarning && (
-          <div className="flex justify-center items-center gap-1.5">
-            <Warning className="size-4 text-garnet-300"/>
-            <p className="text-2xs text-garnet-600 text-center">Updating will reset your current session</p>
+            {/* Session dots */}
+            <div className="flex items-center gap-0.5">
+              {Array.from({length: TOTAL_SESSIONS}, (_, i) => (
+                <span
+                  key={i}
+                  className={`size-1 rounded-sm ${i < session ? "bg-sapphire-300" : "bg-sapphire-300/20"}`}
+                />
+              ))}
+            </div>
           </div>
-        )}
-
-        <div className="flex justify-end items-center gap-1">
-          {showResetWarning ? (
-            <>
-              <Button onClick={handleCancelReset} buttonClassName="min-h-4 bg-garnet-800 text-garnet-300" strokeClassName="stroke-garnet-600">
-                <span className="text-2xs">Cancel</span>
-              </Button>
-              <Button onClick={handleConfirmReset} buttonClassName="min-h-4 bg-jade-800 text-jade-300" strokeClassName="stroke-jade-600">
-                <span className="text-2xs">Confirm</span>
-              </Button>
-            </>
-          ) : (
-            <Button onClick={handleUpdate} buttonClassName="min-h-4 bg-cobalt-800 text-cobalt-300" strokeClassName="stroke-cobalt-600">
-              <span className="text-2xs">Update</span>
-            </Button>
-          )}
         </div>
       </div>
-    )}
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div className="px-2 py-1.5 rounded-lg flex flex-col gap-1.5">
+          {(["session", "shortBreak", "longBreak"] as Phase[]).map(key => (
+            <label key={key} className="flex justify-between items-center gap-2">
+              <span className="text-2xs text-bright font-medium">{PHASE_LABELS[key]}</span>
+              <div className="flex items-center gap-1">
+                <input
+                  id={`${key}`}
+                  type="text"
+                  inputMode="numeric"
+                  min={PHASE_LIMITS[key].min}
+                  max={PHASE_LIMITS[key].max}
+                  value={draftInputs[key]}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => handleDraftChange(key, e.target.value)}
+                  className="w-8 text-sm font-black text-white tabular-nums text-center rounded outline-none bg-slate-500"
+                />
+                <span className="text-3xs text-slate-400">min</span>
+              </div>
+            </label>
+          ))}
+
+          {showResetWarning && (
+            <div className="flex justify-center items-center gap-1.5">
+              <Warning className="size-4 text-garnet-300"/>
+              <p className="text-2xs text-garnet-600 text-center">Updating will reset your current session</p>
+            </div>
+          )}
+
+          <div className="flex justify-end items-center gap-1">
+            {showResetWarning ? (
+              <>
+                <Button onClick={handleCancelReset} buttonClassName="min-h-4 bg-garnet-800 text-garnet-300" strokeClassName="stroke-garnet-600">
+                  <span className="text-2xs">Cancel</span>
+                </Button>
+                <Button onClick={handleConfirmReset} buttonClassName="min-h-4 bg-jade-800 text-jade-300" strokeClassName="stroke-jade-600">
+                  <span className="text-2xs">Confirm</span>
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleUpdate} buttonClassName="min-h-4 bg-cobalt-800 text-cobalt-300" strokeClassName="stroke-cobalt-600">
+                <span className="text-2xs">Update</span>
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
