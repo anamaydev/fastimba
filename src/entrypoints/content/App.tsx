@@ -6,7 +6,7 @@ import CodeBlock from "@/components/CodeBlock.tsx";
 import ToggleButton from "@/components/ToggleButton.tsx";
 import Feature from "@/components/Feature.tsx";
 import Pomodoro from "@/components/Pomodoro.tsx";
-import {Emmet, RelativeLines, Terminal} from "@/components/icons";
+import {Emmet, RelativeLines, Keyboard} from "@/components/icons";
 
 import {usePreferencesContext} from "@/context/preferences/usePreferencesContext.ts";
 
@@ -240,7 +240,7 @@ const App = () => {
             <Feature.Content>
               <Feature.Header>
                 <Feature.Icon>
-                  <Terminal className="size-4 text-sapphire-300"/>
+                  <Keyboard className="size-4 text-sapphire-300"/>
                 </Feature.Icon>
                 <Feature.Title>Vim</Feature.Title>
               </Feature.Header>
