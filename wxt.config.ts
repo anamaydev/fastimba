@@ -2,7 +2,7 @@ import { defineConfig } from 'wxt';
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  modules: ['@wxt-dev/module-react'],
+  modules: ["@wxt-dev/module-react"],
   srcDir: 'src',
   manifest: {
     name: "Fastimba",
@@ -10,8 +10,8 @@ export default defineConfig({
     action: {},
     web_accessible_resources: [
       {
-        resources: ['monaco-bridge.js'],
-        matches: ['*://scrimba.com/*']
+        resources: ["monaco-bridge.js", "pomodoro-bridge.js", "audio/chime.ogg"],
+        matches: ["*://scrimba.com/*"]
       }
     ],
     browser_specific_settings: {

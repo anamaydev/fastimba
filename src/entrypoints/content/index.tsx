@@ -62,5 +62,12 @@ export default defineContentScript({
     } catch (err) {
       console.error("[fastimba] failed to inject monaco-bridge:", err);
     }
+
+    /* Insert Pomodoro Bridge script */
+    try {
+      await injectScript("/pomodoro-bridge.js", {keepInDom: true});
+    } catch (err) {
+      console.error("[fastimba] failed to inject pomodoro-bridge:", err);
+    }
   },
 });

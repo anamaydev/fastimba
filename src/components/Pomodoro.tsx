@@ -5,6 +5,13 @@ import {usePreferencesContext} from "@/context/preferences/usePreferencesContext
 
 type Phase = "session" | "shortBreak" | "longBreak";
 
+/* Outbound messages posted to the main world for title/favicon sync */
+type PomodoroMessage =
+  | { source: "fastimba"; type: "POMODORO_PHASE_START"; phase: Phase; remainingSeconds: number; totalSeconds: number; session: number; totalSessions: number; startTimestamp: number }
+  | { source: "fastimba"; type: "POMODORO_PAUSE";  remainingSeconds: number }
+  | { source: "fastimba"; type: "POMODORO_RESUME"; remainingSeconds: number; resumeTimestamp: number }
+  | { source: "fastimba"; type: "POMODORO_RESET" };
+
 const PHASE_LABELS: Record<Phase, string> = {
   session: "Session",
   shortBreak: "Short Break",
@@ -57,6 +64,11 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
   const activeDurationRef = useRef(pomodoroDurations.session);
   /* Holds parsed durations between Update click and Confirm */
   const pendingDurationsRef = useRef<Record<Phase, number> | null>(null);
+  /* Track session count synchronously so startPhase can read the correct value before React state settles */
+  const sessionRef = useRef(1);
+  /* Wall-clock anchor for drift-proof countdown: mirrors the bridge's refRemaining/refTimestamp pattern */
+  const playTimestampRef = useRef(0);
+  const remainingAtPlayRef = useRef(pomodoroDurations.session);
 
   /* String-based drafts so the input field can be emptied while typing */
   const [draftInputs, setDraftInputs] = useState<Record<Phase, string>>({
@@ -65,60 +77,42 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
     longBreak: toMinStr(pomodoroDurations.longBreak),
   });
 
-  /* Countdown: tick every 1s while running */
-  useEffect(() => {
-    if (!isRunning || remaining <= 0) return;
-
-    const id = setInterval(() => {
-      setRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(id);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [isRunning, remaining]);
-
   /* Single entry point for all phase transitions, keeps activeDuration, phase, remaining in sync */
   const startPhase = useCallback((nextPhase: Phase, nextDurations: Record<Phase, number>) => {
     const duration = nextDurations[nextPhase];
+    const ts = Date.now();
     activeDurationRef.current = duration;
+    /* Anchor the wall-clock countdown so both React and the bridge start from the same timestamp */
+    playTimestampRef.current = ts;
+    remainingAtPlayRef.current = duration;
     setPhase(nextPhase);
     setRemaining(duration);
+    /* Notify the injected bridge so it can mirror phase state for title/favicon */
+    window.postMessage({ source: "fastimba", type: "POMODORO_PHASE_START", phase: nextPhase, remainingSeconds: duration, totalSeconds: duration, session: sessionRef.current, totalSessions: TOTAL_SESSIONS, startTimestamp: ts } satisfies PomodoroMessage);
   }, []);
-
-  /* Auto-advance: session > short break > session (x4) > long break > stop */
-  useEffect(() => {
-    if (remaining > 0 || !isRunning) return;
-
-    if (phase === "session") {
-      if (session >= TOTAL_SESSIONS) {
-        startPhase("longBreak", durations); /* 4th session done, long break */
-      } else {
-        startPhase("shortBreak", durations);
-      }
-    } else if (phase === "shortBreak") {
-      setSession(prev => prev + 1);
-      startPhase("session", durations);
-    } else {
-      /* Long break finished, full reset */
-      setSession(1);
-      startPhase("session", durations);
-      setIsRunning(false);
-    }
-  }, [remaining, isRunning, phase, session, durations, startPhase]);
 
   const togglePlayPause = useCallback(() => {
-    setIsRunning(prev => !prev);
-  }, []);
+    const nowRunning = !isRunning;
+    setIsRunning(nowRunning);
+    /* Emit before state settles so the bridge gets the intended direction */
+    if (nowRunning) {
+      const ts = Date.now();
+      /* Re-anchor wall-clock refs on resume so React countdown stays in sync with the bridge */
+      playTimestampRef.current = ts;
+      remainingAtPlayRef.current = remaining;
+      window.postMessage({ source: "fastimba", type: "POMODORO_RESUME", remainingSeconds: remaining, resumeTimestamp: ts } satisfies PomodoroMessage);
+    } else {
+      window.postMessage({ source: "fastimba", type: "POMODORO_PAUSE", remainingSeconds: remaining } satisfies PomodoroMessage);
+    }
+  }, [isRunning, remaining]);
 
   const restart = useCallback(() => {
     setIsRunning(false);
+    sessionRef.current = 1;
     setSession(1);
     startPhase("session", durations);
+    /* RESET after PHASE_START so the bridge discards the interval and restores original title */
+    window.postMessage({ source: "fastimba", type: "POMODORO_RESET" } satisfies PomodoroMessage);
   }, [durations, startPhase]);
 
   const toggleSettings = useCallback(() => {
@@ -164,6 +158,7 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
   /* Apply new durations: reset to session 1, restart the session phase, persist to preferences */
   const applySettings = useCallback((newDurations: Record<Phase, number>) => {
     setDurations(newDurations);
+    sessionRef.current = 1;
     setSession(1);
     startPhase("session", newDurations);
     setShowResetWarning(false);
@@ -185,6 +180,8 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
 
   const handleConfirmReset = useCallback(() => {
     if (pendingDurationsRef.current) {
+      /* RESET first so the bridge stops its interval before applySettings→startPhase emits PHASE_START */
+      window.postMessage({ source: "fastimba", type: "POMODORO_RESET" } satisfies PomodoroMessage);
       setIsRunning(false);
       applySettings(pendingDurationsRef.current);
       pendingDurationsRef.current = null;
@@ -198,22 +195,46 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
     pendingDurationsRef.current = null;
   }, []);
 
-  /* Attach onclick handlers to parent-owned button refs */
+  /* Countdown: wall-clock math */
   useEffect(() => {
-    const playEl = playButtonContainerRef.current;
-    const restartEl = restartButtonContainerRef.current;
-    const settingsEl = timerSettingsButtonContainerRef.current;
+    if (!isRunning || remaining <= 0) return;
 
-    if (playEl) playEl.onclick = togglePlayPause;
-    if (restartEl) restartEl.onclick = restart;
-    if (settingsEl) settingsEl.onclick = toggleSettings;
+    const id = setInterval(() => {
+      const next = Math.max(0, remainingAtPlayRef.current - Math.floor((Date.now() - playTimestampRef.current) / 1000));
+      setRemaining(next);
+      if (next <= 0) clearInterval(id);
+    }, 1000);
 
-    return () => {
-      if (playEl) playEl.onclick = null;
-      if (restartEl) restartEl.onclick = null;
-      if (settingsEl) settingsEl.onclick = null;
-    };
-  }, [playButtonContainerRef, restartButtonContainerRef, timerSettingsButtonContainerRef, togglePlayPause, restart, toggleSettings]);
+    return () => clearInterval(id);
+  }, [isRunning, phase]); /* phase dep restarts the interval on auto-advance */
+
+  /* Auto-advance: session > short break > session (x4) > long break > stop */
+  useEffect(() => {
+    if (remaining > 0 || !isRunning) return;
+
+    /* Play chime when a phase finishes */
+    new Audio(browser.runtime.getURL("/audio/chime.ogg")).play().catch(() => {});
+
+    if (phase === "session") {
+      if (session >= TOTAL_SESSIONS) {
+        startPhase("longBreak", durations); /* 4th session done, long break */
+      } else {
+        startPhase("shortBreak", durations);
+      }
+    } else if (phase === "shortBreak") {
+      sessionRef.current = session + 1; /* update ref before startPhase reads it */
+      setSession(prev => prev + 1);
+      startPhase("session", durations);
+    } else {
+      /* Long break finished, full reset */
+      sessionRef.current = 1; /* update ref before startPhase reads it */
+      setSession(1);
+      startPhase("session", durations);
+      setIsRunning(false);
+      /* Timer auto-stops at cycle end, RESET restores original title/favicon */
+      window.postMessage({ source: "fastimba", type: "POMODORO_RESET" } satisfies PomodoroMessage);
+    }
+  }, [remaining, isRunning, phase, session, durations, startPhase]);
 
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;
@@ -234,13 +255,13 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
 
         {/* Buttons */}
         <div className="flex justify-center items-center gap-1.5">
-          <Button ref={playButtonContainerRef}>
+          <Button ref={playButtonContainerRef} onClick={togglePlayPause}>
             {isRunning ? <Pause className="size-4" /> : <Play className="size-4" />}
           </Button>
-          <Button ref={restartButtonContainerRef}>
+          <Button ref={restartButtonContainerRef} onClick={restart}>
             <Restart className="size-4" />
           </Button>
-          <Button ref={timerSettingsButtonContainerRef}>
+          <Button ref={timerSettingsButtonContainerRef} onClick={toggleSettings}>
             <TimerSettings className="size-4" />
           </Button>
         </div>
