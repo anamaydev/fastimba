@@ -365,15 +365,15 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
             {showResetWarning ? (
               <>
                 <Button onClick={handleCancelReset} colorScheme="garnet">
-                  <span className="text-2xs">Cancel</span>
+                  <span className="text-2xs min-h-4 flex justify-center items-center">Cancel</span>
                 </Button>
                 <Button onClick={handleConfirmReset} colorScheme="jade">
-                  <span className="text-2xs">Confirm</span>
+                  <span className="text-2xs min-h-4 flex justify-center items-center">Confirm</span>
                 </Button>
               </>
             ) : (
               <Button onClick={handleUpdate} colorScheme="cobalt">
-                <span className="text-2xs">Update</span>
+                <span className="text-2xs min-h-4 flex justify-center items-center">Update</span>
               </Button>
             )}
           </div>
