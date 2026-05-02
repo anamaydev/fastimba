@@ -17,7 +17,12 @@ interface PostToContent {
 
 // noinspection JSUnusedGlobalSymbols
 export default defineUnlistedScript(() => {
-  let userPreference: UserPreferenceType | null = null;
+  let userPreference: UserPreferenceType | null = (() => {
+    try {
+      const saved = localStorage.getItem("userPreference");
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  })();
   let monacoInstance: typeof window.monaco | null = null;
   let editorListeners: Map<string, {dispose: () => void}> = new Map();
   let onCreateEditorDisposable: { dispose: () => void } | null = null;
