@@ -56,18 +56,16 @@ export default defineContentScript({
       console.error("[fastimba] failed to mount shadow-root UI:", err);
     }
 
-    /* Insert Monaco Bridge script */
-    try {
-      await injectScript("/monaco-bridge.js", {keepInDom: true});
-    } catch (err) {
-      console.error("[fastimba] failed to inject monaco-bridge:", err);
-    }
-
-    /* Insert Pomodoro Bridge script */
-    try {
-      await injectScript("/pomodoro-bridge.js", {keepInDom: true});
-    } catch (err) {
-      console.error("[fastimba] failed to inject pomodoro-bridge:", err);
-    }
+    /*
+    * Insert bridge scripts in parallel: MV2 (Firefox) inlines via script.text which
+    * executes synchronously but never fires a `load` event, so awaiting sequentially
+    * would hang on the first injection and block all subsequent ones.
+    * */
+    await Promise.allSettled([
+      injectScript("/monaco-bridge.js", {keepInDom: true}).catch(err =>
+        console.error("[fastimba] failed to inject monaco-bridge:", err)),
+      injectScript("/pomodoro-bridge.js", {keepInDom: true}).catch(err =>
+        console.error("[fastimba] failed to inject pomodoro-bridge:", err)),
+    ]);
   },
 });
