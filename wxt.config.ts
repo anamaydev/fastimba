@@ -1,5 +1,6 @@
 import { defineConfig } from 'wxt';
 import tailwindcss from '@tailwindcss/vite'
+import path from 'path';
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
@@ -27,5 +28,12 @@ export default defineConfig({
   },
   vite: () => ({
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        'monaco-editor/esm/vs/editor/editor.api': path.resolve('src/shims/monaco-editor.ts'),
+        'monaco-editor/esm/vs/editor/common/commands/shiftCommand': path.resolve('src/shims/monaco-shift-command.ts'),
+        'monaco-editor': path.resolve('src/shims/monaco-editor.ts'),
+      }
+    }
   }),
 });
