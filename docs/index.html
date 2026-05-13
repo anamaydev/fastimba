@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <title>Fastimba</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+
+  <body>
+    <div class="gradient"></div>
+    <div class="pattern"></div>
+    
+    <header class="site-header">
+      <div class="site-header__logo">
+        <svg class="site-header__logo-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="currentColor" d="M10 12h4v4h-4v4H6V8h4zm8-4h-8V4h8z"/>
+        </svg>
+        <span class="site-header__logo-name">Fastimba</span>
+      </div>
+      <nav class="site-header__nav" id="header-nav"></nav>
+    </header>
+
+    <div class="fallback">
+      <div class="fallback__logo">
+        <svg class="fallback__logo-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="currentColor" d="M10 12h4v4h-4v4H6V8h4zm8-4h-8V4h8z"/>
+        </svg>
+        <h1 class="fallback__logo-name">Fastimba</h1>
+      </div>
+      <p class="fallback__message">Fastimba is a desktop browser extension. Visit this page on a laptop or desktop to explore features and video tutorials.</p>
+    </div>
+
+    <main class="feature">
+      <div class="feature__media">
+        <span class="feature__media-label"></span>
+        <div class="feature__media-counter">
+          <strong class="feature__media-counter-current"></strong>
+          <span class="feature__media-counter-total"></span>
+        </div>
+        <span class="feature__media-tag">Video Tutorial</span>
+      </div>
+      <div class="feature__controls"></div>
+      <div class="feature__content"></div>
+    </main>
+
+    <script type="module" src="js/script.js"></script>
+  </body>
+</html>
