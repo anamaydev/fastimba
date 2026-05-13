@@ -1,7 +1,7 @@
 export {default as Logo} from './Logo';
 export {default as Emmet} from './Emmet';
 export {default as RelativeLines} from './RelativeLines';
-export {default as Keyboard} from './Keyboard.tsx';
+export {default as Vim} from './Vim';
 export {default as Check} from './Check';
 export {default as Uncheck} from './Uncheck';
 export {default as Information} from './Information';
