@@ -24,6 +24,7 @@ Scrimba's editor doesn't expose configuration for vim keybindings, relative line
   - JavaScript
   - TypeScript
   - JSX / TSX
+- **Pomodoro timer** - built-in Pomodoro timer with configurable session, short break, and long break durations; auto-advances through phases and plays a chime on phase end; syncs timer state to the page title and favicon
 - **Overlay panel** - triggered by clicking the extension toolbar button; shows the current Scrimba course title, thumbnail, and feature toggles
 - **Edit/view mode awareness** - features are applied only when the editor is in edit mode and removed when switching to view mode
 - **Multi-editor support** - tracks which Monaco editor instance has focus and applies features to the active one
