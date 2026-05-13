@@ -1,4 +1,9 @@
 export default defineBackground(() => {
+  /* Open Fastimba guide page on installation */
+  browser.runtime.onInstalled.addListener((details) => {
+    if (details.reason === "install") browser.tabs.create({url: "https://anamaydev.github.io/fastimba/"});
+  });
+
   /* MV3 (Chrome) exposes browser.action; MV2 (Firefox) exposes browser.browserAction. */
   const action = browser.action ?? (browser as any).browserAction;
 
