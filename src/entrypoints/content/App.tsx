@@ -296,6 +296,10 @@ const App = () => {
           timerSettingsButtonContainerRef={pomodoroSettingsRef}
         />
       </div>
+
+      <p className="text-center text-3xs leading-normal text-ash-100/40 px-2 pb-1">
+        This extension is in beta. If you encounter any issues,<br/>please raise an issue on GitHub.
+      </p>
     </div>
   )
 };
