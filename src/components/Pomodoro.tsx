@@ -9,7 +9,7 @@ type Phase = "session" | "shortBreak" | "longBreak";
 type PomodoroMessage =
   | { source: "fastimba"; type: "POMODORO_PHASE_START"; phase: Phase; remainingSeconds: number; totalSeconds: number; session: number; totalSessions: number; startTimestamp: number }
   | { source: "fastimba"; type: "POMODORO_PAUSE";  remainingSeconds: number }
-  | { source: "fastimba"; type: "POMODORO_RESUME"; remainingSeconds: number; resumeTimestamp: number }
+  | { source: "fastimba"; type: "POMODORO_RESUME"; remainingSeconds: number; totalSeconds: number; resumeTimestamp: number }
   | { source: "fastimba"; type: "POMODORO_RESET" };
 
 const PHASE_LABELS: Record<Phase, string> = {
@@ -100,7 +100,7 @@ const Pomodoro = ({playButtonContainerRef, restartButtonContainerRef, timerSetti
       /* Re-anchor wall-clock refs on resume so React countdown stays in sync with the bridge */
       playTimestampRef.current = ts;
       remainingAtPlayRef.current = remaining;
-      window.postMessage({ source: "fastimba", type: "POMODORO_RESUME", remainingSeconds: remaining, resumeTimestamp: ts } satisfies PomodoroMessage);
+      window.postMessage({ source: "fastimba", type: "POMODORO_RESUME", remainingSeconds: remaining, totalSeconds: activeDurationRef.current, resumeTimestamp: ts } satisfies PomodoroMessage);
     } else {
       window.postMessage({ source: "fastimba", type: "POMODORO_PAUSE", remainingSeconds: remaining } satisfies PomodoroMessage);
     }

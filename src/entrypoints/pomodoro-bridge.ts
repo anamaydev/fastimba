@@ -3,7 +3,7 @@ type Phase = "session" | "shortBreak" | "longBreak";
 type PomodoroMessage =
   | { source: "fastimba"; type: "POMODORO_PHASE_START"; phase: Phase; remainingSeconds: number; totalSeconds: number; session: number; totalSessions: number; startTimestamp: number }
   | { source: "fastimba"; type: "POMODORO_PAUSE";  remainingSeconds: number }
-  | { source: "fastimba"; type: "POMODORO_RESUME"; remainingSeconds: number; resumeTimestamp: number }
+  | { source: "fastimba"; type: "POMODORO_RESUME"; remainingSeconds: number; totalSeconds: number; resumeTimestamp: number }
   | { source: "fastimba"; type: "POMODORO_RESET" };
 
 // noinspection JSUnusedGlobalSymbols
@@ -112,6 +112,7 @@ export default defineUnlistedScript(() => {
     } else if (message.type === "POMODORO_RESUME") {
       /* Timer resumed: re-anchor to the exact moment play was pressed and start ticking */
       isRunning = true;
+      phaseTotalSeconds = message.totalSeconds;
       anchorRemaining = message.remainingSeconds;
       anchorTimestamp = message.resumeTimestamp;
       applyTitle(anchorRemaining);
