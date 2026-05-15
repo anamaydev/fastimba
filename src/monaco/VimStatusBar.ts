@@ -25,31 +25,55 @@ export default class VimStatusBar {
     this.setupDOM();
   }
 
+  private el(tag: string, className: string, children?: (Node | string)[]) {
+    const e = document.createElement(tag);
+    e.className = className;
+    if (children) e.append(...children);
+    return e;
+  }
+
   private setupDOM() {
-    this.node.innerHTML = `
-      <div class="status-bar">
-        <div class="status-bar__panel status-bar__content">
-          <div class="status-bar__section status-bar__section--mode">
-            <span class="status-bar__mode-indicator"></span>
-            <input name="command-id" type="text" class="status-bar__command-input" />
-          </div>
-          <div class="status-bar__section status-bar__section--info">
-            <span class="status-bar__key-buffer"></span>
-            <span class="status-bar__cursor-position"></span>
-          </div>
-        </div>
-        <div class="status-bar__panel status-bar__notification">
-          <div class="status-bar__notification-item">
-            <svg class="status-bar__notification-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
-              <path d="M12 9v4"/>
-              <path d="M12 17h.01"/>
-            </svg>
-            <span class="status-bar__notification-text"></span>
-          </div>
-        </div>
-      </div>
-    `;
+    const modeIndicator = this.el("span", "status-bar__mode-indicator");
+    const commandInput = document.createElement("input");
+    commandInput.name = "command-id";
+    commandInput.type = "text";
+    commandInput.className = "status-bar__command-input";
+
+    const keyBuffer = this.el("span", "status-bar__key-buffer");
+    const cursorPosition = this.el("span", "status-bar__cursor-position");
+
+    const notificationIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    notificationIcon.classList.add("status-bar__notification-icon");
+    notificationIcon.setAttribute("width", "14");
+    notificationIcon.setAttribute("height", "14");
+    notificationIcon.setAttribute("viewBox", "0 0 24 24");
+    notificationIcon.setAttribute("fill", "none");
+    notificationIcon.setAttribute("stroke", "currentColor");
+    notificationIcon.setAttribute("stroke-width", "2");
+    notificationIcon.setAttribute("stroke-linecap", "round");
+    notificationIcon.setAttribute("stroke-linejoin", "round");
+    for (const d of [
+      "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3",
+      "M12 9v4",
+      "M12 17h.01"
+    ]) {
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", d);
+      notificationIcon.appendChild(p);
+    }
+
+    const notificationText = this.el("span", "status-bar__notification-text");
+    const notificationItem = this.el("div", "status-bar__notification-item", [notificationIcon, notificationText]);
+
+    const statusBar = this.el("div", "status-bar", [
+      this.el("div", "status-bar__panel status-bar__content", [
+        this.el("div", "status-bar__section status-bar__section--mode", [modeIndicator, commandInput]),
+        this.el("div", "status-bar__section status-bar__section--info", [keyBuffer, cursorPosition])
+      ]),
+      this.el("div", "status-bar__panel status-bar__notification", [notificationItem])
+    ]);
+
+    this.node.replaceChildren(statusBar);
 
     /* Cache references to DOM elements for efficient updates */
     this.modeIndicatorEl = this.node.querySelector(".status-bar__mode-indicator")!;
@@ -150,7 +174,7 @@ export default class VimStatusBar {
 
   /* Clear all content from the status bar DOM node */
   clear = () => {
-    this.node.innerHTML = "";
+    this.node.replaceChildren();
   };
 
   showNotification(text: string | Node) {
