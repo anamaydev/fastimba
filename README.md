@@ -8,6 +8,15 @@ Scrimba's editor doesn't expose configuration for vim keybindings, relative line
 
 ---
 
+## Install
+
+| Browser | Link |
+|---|---|
+| Chrome | [Chrome Web Store](https://chromewebstore.google.com/detail/fastimba/lgjlpmdkdpbkcnkfpgighkdomjfkgpgc) |
+| Firefox | [Firefox Add-ons](https://addons.mozilla.org/en-GB/firefox/addon/fastimba/) |
+
+---
+
 ## Features
 
 - **Vim mode** - vim keybindings via `monaco-vim`, with a custom status bar showing 
@@ -15,16 +24,26 @@ Scrimba's editor doesn't expose configuration for vim keybindings, relative line
   - key buffer 
   - cursor position 
   - command input
+
+https://github.com/user-attachments/assets/8458fafd-77f9-44c7-bde1-3d86ab07ac72
+
 - **Relative line numbers** - line numbers shown relative to the cursor position
+
+https://github.com/user-attachments/assets/bf555ccd-f18e-4e6f-8da9-2d3c88249bb7 
+
 - **Emmet abbreviation expansion** - supported languages: 
   - HTML 
   - CSS 
-  - SCSS
-  - LESS 
   - JavaScript
   - TypeScript
   - JSX / TSX
+
+https://github.com/user-attachments/assets/b289c33b-2036-4b60-9c8a-9a1797563f0b
+
 - **Pomodoro timer** - built-in Pomodoro timer with configurable session, short break, and long break durations; auto-advances through phases and plays a chime on phase end; syncs timer state to the page title and favicon
+
+https://github.com/user-attachments/assets/ba7e3956-f0ce-42f5-9002-03762603228a
+
 - **Overlay panel** - triggered by clicking the extension toolbar button; shows the current Scrimba course title, thumbnail, and feature toggles
 - **Edit/view mode awareness** - features are applied only when the editor is in edit mode and removed when switching to view mode
 - **Multi-editor support** - tracks which Monaco editor instance has focus and applies features to the active one
@@ -57,17 +76,19 @@ Toolbar click
     ▼
 background.ts ──▶ runtime.sendMessage ──▶ content/index.tsx (shadow DOM)
                                                 │
-                                                ▼
-                                         window.postMessage
-                                                │
-                                                ▼
-                                        monaco-bridge.ts (page context)
+                                    ┌───────────┴───────────┐
+                                    ▼                       ▼
+                             window.postMessage      window.postMessage
+                                    │                       │
+                                    ▼                       ▼
+                             monaco-bridge.ts        pomodoro-bridge.ts
+                              (page context)           (page context)
 ```
 
 ### Content script (`content/index.tsx`)
 
 - Matches `*://scrimba.com/*`
-- Injects `monaco-bridge.js` into the page (runs in page context so it can access `window.monaco`)
+- Injects `monaco-bridge.js` and `pomodoro-bridge.js` into the page in parallel (both run in page context)
 - Mounts the React settings panel inside a shadow DOM (`<fastimba-app>`) appended to `<body>`
 - CSS is scoped to the shadow root via `cssInjectionMode: 'ui'` - extension styles don't leak into Scrimba's page
 
@@ -85,6 +106,16 @@ Runs as an unlisted script in the **page context** (not the isolated extension c
 
 **On entering edit mode:** features are applied to the active editor instance.
 **On entering view mode or navigating away:** features are removed and resources disposed.
+
+### Pomodoro bridge (`pomodoro-bridge.ts`)
+
+Runs as an unlisted script in the **page context** alongside the Monaco bridge.
+
+- Listens for Pomodoro phase/pause/resume/reset messages posted from the content script
+- Draws an animated progress ring on a canvas favicon with phase-specific colors
+- Syncs the countdown to the browser tab title (MM:SS format) using wall-clock math to avoid timer drift
+- Observes title mutations during Scrimba page navigation and re-syncs the countdown if the title is overwritten
+- Restores the original favicon and title on timer reset
 
 ---
 
