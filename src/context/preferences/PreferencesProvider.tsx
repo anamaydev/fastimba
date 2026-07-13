@@ -12,22 +12,41 @@ interface PostToMonacoBridge {
   payload: PreferencesTypes
 }
 
+/*
+* Defaults for any key missing from stored preferences. Preferences saved by an
+* earlier version (e.g. before pomodoroDurations existed) would otherwise leave
+* that key undefined and crash the Pomodoro component on first render.
+* */
+const DEFAULT_PREFERENCES: PreferencesTypes = {
+  vim: false,
+  relativeLineNumbers: false,
+  emmet: false,
+  pomodoroDurations: {
+    session: 25 * 60,
+    shortBreak: 5 * 60,
+    longBreak: 15 * 60
+  },
+};
+
 const PreferencesProvider = ({children}: PreferencesProviderProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [preferences, setPreferences] = useState<PreferencesTypes>(()  => {
     const savedPreferences = localStorage.getItem("userPreference");
-    return savedPreferences ?
-      JSON.parse(savedPreferences) :
-      {
-        vim: false,
-        relativeLineNumbers: false,
-        emmet: false,
-        pomodoroDurations: {
-          session: 25 * 60,
-          shortBreak: 5 * 60,
-          longBreak: 15 * 60
-        },
-      };
+    if (!savedPreferences) return DEFAULT_PREFERENCES;
+
+    /*
+    * Merge over defaults so preferences persisted by an older schema still get
+    * every field, including nested pomodoroDurations.
+    * */
+    const parsed = JSON.parse(savedPreferences) as Partial<PreferencesTypes>;
+    return {
+      ...DEFAULT_PREFERENCES,
+      ...parsed,
+      pomodoroDurations: {
+        ...DEFAULT_PREFERENCES.pomodoroDurations,
+        ...parsed.pomodoroDurations,
+      },
+    };
   });
 
   /* handle settings change */
