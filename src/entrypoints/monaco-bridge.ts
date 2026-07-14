@@ -1,6 +1,6 @@
 import type * as Monaco from 'monaco-editor';
 import { emmetHTML, emmetCSS, emmetJSX } from 'emmet-monaco-es'
-import {initVimMode, VimAdapterInstance } from 'monaco-vim';
+import {initVimMode, VimAdapterInstance, VimMode } from 'monaco-vim';
 import VimStatusBar from "../monaco/VimStatusBar";
 import styles from "./styles.ts";
 
@@ -41,6 +41,53 @@ export default defineUnlistedScript(() => {
   /* Post a message to the content script to notify content script of editor state changes */
   const postToContent = (message: PostToContent): void => {
     window.postMessage({ source: "fastimba", ...message }, "*");
+  };
+
+  /*
+  * System clipboard register bridge.
+  * monaco-vim is a port of CodeMirror's vim keymap and ships no "+"/"*" registers
+  * and no link to the OS clipboard, so "+y silently falls back to the unnamed
+  * register and never reaches the system clipboard. Each custom register keeps its
+  * own buffer (so toString stays consistent for the unnamed register and normal p)
+  * and mirrors every write into navigator.clipboard, letting "+y, "+yy, "+dd,
+  * visual "+y, etc. copy out. The clipboard write needs a secure context plus the
+  * transient user activation from the keypress that triggered the yank, both of
+  * which hold here; failures are swallowed so vim's own copy still succeeds.
+  * */
+  const createClipboardRegister = () => {
+    let buffer = "";
+    let linewise = false;
+    const sync = () => { navigator.clipboard?.writeText(buffer).catch(() => {}); };
+    return {
+      setText(text: string, isLinewise?: boolean) {
+        buffer = text || "";
+        linewise = !!isLinewise;
+        sync();
+      },
+      pushText(text: string, isLinewise?: boolean) {
+        /* Match Register.pushText: insert a newline when switching to linewise. */
+        if (isLinewise && !linewise) buffer += "\n";
+        linewise = linewise || !!isLinewise;
+        buffer += text;
+        sync();
+      },
+      clear() { buffer = ""; linewise = false; },
+      toString() { return buffer; },
+    };
+  };
+
+  /*
+  * Define the "+ and "* registers once. defineRegister throws if the name is
+  * already registered, so a re-injection on the same page is caught and ignored.
+  * */
+  const defineClipboardRegisters = () => {
+    const vim = VimMode?.Vim;
+    if (!vim || typeof vim.defineRegister !== "function") return;
+    for (const name of ["+", "*"]) {
+      try {
+        vim.defineRegister(name, createClipboardRegister());
+      } catch { /* Register already defined on this page, nothing to do. */ }
+    }
   };
 
   /* Handle incoming messages from content script, filter out non-fastimba messages and updates user preferences */
@@ -340,6 +387,7 @@ export default defineUnlistedScript(() => {
   });
 
   /* INITIALIZATION: Start the observer chain at document.body to detect op-layers mounting */
+  defineClipboardRegisters();
   opLayersMountObserver.observe(document.body, {childList: true, subtree: true});
   window.addEventListener("message", handleContentMessage);
 
